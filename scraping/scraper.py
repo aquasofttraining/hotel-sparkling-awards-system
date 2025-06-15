@@ -15,45 +15,6 @@ class HotelSparklingAwardsScraper:
     def __init__(self, hotel_urls):
         self.hotel_urls = [url.split('#tab-reviews')[0] for url in hotel_urls]
         self.driver = None
-        
-        # Scoring weights
-        self.scoring_weights = {
-            'review_based': 0.65,
-            'metadata_based': 0.35,
-            'review_components': {
-                'overall_metrics': 0.30,
-                'category_ratings': 0.70
-            },
-            'category_weights': {
-                'staff': 0.15,
-                'facilities': 0.20,
-                'cleanliness': 0.25,
-                'comfort': 0.20,
-                'value_for_money': 0.10,
-                'location': 0.10,
-                'free_wifi': 0.05
-            }
-        }
-        
-        # User roles for authentication system
-        self.user_roles = {
-            'hotel_managers': {
-                'permissions': ["read_hotel_data", "write_hotel_data", "manage_property", "view_analytics"],
-                'access_level': 'own_properties_only'
-            },
-            'travelers': {
-                'permissions': ["read_reviews", "write_reviews", "view_ratings", "search_hotels"],
-                'access_level': 'public_data_only'
-            },
-            'administrators': {
-                'permissions': ["full_access", "user_management", "system_config", "data_export"],
-                'access_level': 'full_system_access'
-            },
-            'data_operators': {
-                'permissions': ["read_all_data", "export_data", "data_analysis", "report_generation"],
-                'access_level': 'read_only_all_data'
-            }
-        }
 
     def setup_driver(self):
         chrome_options = Options()
@@ -93,21 +54,82 @@ class HotelSparklingAwardsScraper:
         
         time.sleep(8)
         return BeautifulSoup(self.driver.page_source, 'html.parser')
+    
+    def extract_hotel_basic_info(self, soup, hotel_id, url):
+        """Extract hotel basic information"""
+        hotel_data = {}
+        
+        # Property ID
+        hotel_data['GlobalPropertyID'] = hotel_id
+        hotel_data['property_hash'] = hashlib.md5(url.encode()).hexdigest()[:12]
+        
+        # Hotel name
+        name_selectors = [
+            'h2.ddb12f4f86.pp-header__title',
+            'h1[data-testid="title"]',
+            'h2[data-testid="title"]'
+        ]
+        
+        for selector in name_selectors:
+            name_el = soup.select_one(selector)
+            if name_el:
+                hotel_data['GlobalPropertyName'] = name_el.get_text(strip=True)
+                print(f"Hotel: {hotel_data['GlobalPropertyName']}")
+                break
+        else:
+            hotel_data['GlobalPropertyName'] = f"Hotel {hotel_id}"
+        
+        # Location
+        location_el = soup.select_one('div.b99b6ef58f.cb4b7a25d9')
+        if location_el:
+            location_text = location_el.get_text(strip=True)
+            for keyword in ['Excellent location', 'Good location', 'Very good location', 'Fabulous location']:
+                if keyword in location_text:
+                    location_text = location_text.split(keyword)[0]
+                    break
+            hotel_data['PropertyAddress1'] = location_text.strip()
+        else:
+            # Fallback based on URL
+            if '/ro/' in url:
+                hotel_data['PropertyAddress1'] = "Bucharest, Romania"
+                hotel_data['CityID'] = 1
+            elif '/fr/' in url:
+                hotel_data['PropertyAddress1'] = "Paris, France"
+                hotel_data['CityID'] = 2
+            elif '/cn/' in url:
+                hotel_data['PropertyAddress1'] = "Beijing, China"
+                hotel_data['CityID'] = 3
+        
+        # Coordinates
+        if '/ro/' in url:
+            hotel_data['PropertyLatitude'] = 44.4268
+            hotel_data['PropertyLongitude'] = 26.1025
+        elif '/fr/' in url:
+            hotel_data['PropertyLatitude'] = 48.8566
+            hotel_data['PropertyLongitude'] = 2.3522
+        elif '/cn/' in url:
+            hotel_data['PropertyLatitude'] = 39.9042
+            hotel_data['PropertyLongitude'] = 116.4074
+        
+        return hotel_data
+
+    def run_basic_test(self):
+        self.setup_driver()
+        try:
+            for hotel_id, url in enumerate(self.hotel_urls[:2], 1):  # Test 
+                soup = self.load_page(url)
+                hotel_data = self.extract_hotel_basic_info(soup, hotel_id, url)
+                print(f"Extracted: {hotel_data['GlobalPropertyName']}")
+                time.sleep(5)
+        finally:
+            self.driver.quit()
 
 
 if __name__ == "__main__":
     hotel_urls = [
         "https://www.booking.com/hotel/ro/sofitel-bucharest.en-gb.html",
-        "https://www.booking.com/hotel/ro/love-room.html",
-        "https://www.booking.com/hotel/ro/monaco-towers-apartments.html",
-        "https://www.booking.com/hotel/fr/numa-paris-champs-elysees.en-gb.html",
-        "https://www.booking.com/hotel/fr/masion-le-bac-apt-101b.en-gb.html",
-        "https://www.booking.com/hotel/fr/guestready-bright-and-cosy-apt-w-47-effeil-tower-view.en-gb.html",
-        "https://www.booking.com/hotel/fr/luxurious-apartment-next-to-arc-de-triomphe.en-gb.html",
-        "https://www.booking.com/hotel/fr/urban-flat-150-pretty-flat-in-center-of-paris.en-gb.html",
-        "https://www.booking.com/hotel/cn/bei-jing-da-xing-guo-ji-ji-chang-mu-mian-hua-jiu-dian.en-gb.html",
-        "https://www.booking.com/hotel/cn/zi-long-hua-yuan-jiu-dian.en-gb.html"
+        "https://www.booking.com/hotel/ro/love-room.html"
     ]
     
     scraper = HotelSparklingAwardsScraper(hotel_urls)
-    scraper.run()
+    
