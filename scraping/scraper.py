@@ -16,6 +16,25 @@ class HotelSparklingAwardsScraper:
         self.hotel_urls = [url.split('#tab-reviews')[0] for url in hotel_urls]
         self.driver = None
 
+        # Scoring weights
+        self.scoring_weights = {
+            'review_based': 0.65,
+            'metadata_based': 0.35,
+            'review_components': {
+                'overall_metrics': 0.30,
+                'category_ratings': 0.70
+            },
+            'category_weights': {
+                'staff': 0.15,
+                'facilities': 0.20,
+                'cleanliness': 0.25,
+                'comfort': 0.20,
+                'value_for_money': 0.10,
+                'location': 0.10,
+                'free_wifi': 0.05
+            }
+        }
+
     def setup_driver(self):
         chrome_options = Options()
         chrome_options.add_argument("--no-sandbox")
@@ -54,7 +73,7 @@ class HotelSparklingAwardsScraper:
         
         time.sleep(8)
         return BeautifulSoup(self.driver.page_source, 'html.parser')
-    
+
     def extract_hotel_basic_info(self, soup, hotel_id, url):
         """Extract hotel basic information"""
         hotel_data = {}
@@ -116,13 +135,43 @@ class HotelSparklingAwardsScraper:
     def run_basic_test(self):
         self.setup_driver()
         try:
-            for hotel_id, url in enumerate(self.hotel_urls[:2], 1):  # Test 
+            for hotel_id, url in enumerate(self.hotel_urls[:2], 1):  # Test
                 soup = self.load_page(url)
                 hotel_data = self.extract_hotel_basic_info(soup, hotel_id, url)
                 print(f"Extracted: {hotel_data['GlobalPropertyName']}")
                 time.sleep(5)
         finally:
             self.driver.quit()
+
+    def extract_review_based_features(self, soup):
+        """Extract review-based features"""
+        review_features = {
+            'overall_metrics': {},
+            'category_ratings': {}
+        }
+        
+        print("Extracting review features...")
+        
+        # Overall rating
+        rating_el = soup.select_one('div.bc946a29db')
+        if rating_el:
+            rating_text = rating_el.get_text(strip=True)
+            numbers = re.findall(r'\d+\.?\d*', rating_text)
+            if numbers:
+                score = float(numbers[0])
+                review_features['overall_metrics']['overall_rating'] = score
+                print(f"Extracted overall rating: {score}")
+        
+        # Review count
+        review_count_el = soup.select_one('span.f63b14ab7a.fb14de7f14.eaa8455879')
+        if review_count_el:
+            count_text = review_count_el.get_text(strip=True)
+            numbers = re.findall(r'\d+', count_text.replace(',', ''))
+            if numbers:
+                review_features['overall_metrics']['review_count'] = int(numbers[0])
+                print(f"Extracted review count: {numbers[0]}")
+        
+        return review_features
 
 
 if __name__ == "__main__":
@@ -132,4 +181,3 @@ if __name__ == "__main__":
     ]
     
     scraper = HotelSparklingAwardsScraper(hotel_urls)
-    
