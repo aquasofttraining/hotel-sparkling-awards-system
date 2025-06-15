@@ -132,17 +132,6 @@ class HotelSparklingAwardsScraper:
         
         return hotel_data
 
-    def run_basic_test(self):
-        self.setup_driver()
-        try:
-            for hotel_id, url in enumerate(self.hotel_urls[:2], 1):  # Test
-                soup = self.load_page(url)
-                hotel_data = self.extract_hotel_basic_info(soup, hotel_id, url)
-                print(f"Extracted: {hotel_data['GlobalPropertyName']}")
-                time.sleep(5)
-        finally:
-            self.driver.quit()
-
     def extract_review_based_features(self, soup):
         """Extract review-based features"""
         review_features = {
@@ -172,6 +161,17 @@ class HotelSparklingAwardsScraper:
                 print(f"Extracted review count: {numbers[0]}")
         
         return review_features
+
+    def run_basic_test(self):
+        self.setup_driver()
+        try:
+            for hotel_id, url in enumerate(self.hotel_urls[:2], 1): 
+                soup = self.load_page(url)
+                hotel_data = self.extract_hotel_basic_info(soup, hotel_id, url)
+                print(f"Extracted: {hotel_data['GlobalPropertyName']}")
+                time.sleep(5)
+        finally:
+            self.driver.quit()
 
 
 if __name__ == "__main__":
