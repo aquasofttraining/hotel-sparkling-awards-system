@@ -35,6 +35,26 @@ class HotelSparklingAwardsScraper:
             }
         }
 
+         # User roles for authentication system
+        self.user_roles = {
+            'hotel_managers': {
+                'permissions': ["read_hotel_data", "write_hotel_data", "manage_property", "view_analytics"],
+                'access_level': 'own_properties_only'
+            },
+            'travelers': {
+                'permissions': ["read_reviews", "write_reviews", "view_ratings", "search_hotels"],
+                'access_level': 'public_data_only'
+            },
+            'administrators': {
+                'permissions': ["full_access", "user_management", "system_config", "data_export"],
+                'access_level': 'full_system_access'
+            },
+            'data_operators': {
+                'permissions': ["read_all_data", "export_data", "data_analysis", "report_generation"],
+                'access_level': 'read_only_all_data'
+            }
+        }
+
     def setup_driver(self):
         chrome_options = Options()
         chrome_options.add_argument("--no-sandbox")
