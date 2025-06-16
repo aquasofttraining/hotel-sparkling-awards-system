@@ -32,6 +32,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data2
       - ./sql/hotels_db:/docker-entrypoint-initdb.d
+      - ./csv:/docker-entrypoint-initdb.d/csv
 
   pgadmin:
     image: dpage/pgadmin4
