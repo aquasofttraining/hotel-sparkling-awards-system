@@ -282,6 +282,149 @@ class HotelSparklingAwardsScraper:
         
         return metadata
 
+    def extract_reviews(self, soup):
+        """Extract featured reviews from the page"""
+        reviews = []
+        
+        reviews_block = soup.select_one('div[data-testid="PropertyReviewsRegionBlock"]')
+        if not reviews_block:
+            print("PropertyReviewsRegionBlock not found")
+            return reviews
+        
+        print("Found PropertyReviewsRegionBlock")
+        
+        featured_reviews = reviews_block.select('div[data-testid="featuredreview"]')
+        print(f"Found {len(featured_reviews)} featured reviews")
+        
+        for i, review_container in enumerate(featured_reviews):
+            try:
+                review_data = self.extract_single_featured_review(review_container)
+                if review_data and review_data['content'] and len(review_data['content']) > 10:
+                    reviews.append(review_data)
+                    print(f"Featured review {i+1} extracted: {review_data['username']}")
+                    
+            except Exception as e:
+                print(f"Error extracting featured review {i+1}: {e}")
+                continue
+        
+        return reviews
+
+    def extract_single_featured_review(self, review_container):
+        """Extract data from a featured review"""
+        # Reviewer name
+        username_el = review_container.select_one('div.b08850ce41.f546354b44')
+        username = username_el.get_text(strip=True) if username_el else "Anonymous"
+        
+        # Review content
+        content_el = review_container.select_one('div[data-testid="featuredreview-text"] .b99b6ef58f.d14152e7c3')
+        if content_el:
+            content = content_el.get_text(strip=True).strip('"')
+        else:
+            content = ""
+        
+        # Country information
+        country_el = review_container.select_one('span.d838fb5f41.aea5eccb71')
+        country = country_el.get_text(strip=True) if country_el else ""
+        
+        return {
+            'username': username,
+            'title': f"Review by {username}",
+            'content': content,
+            'overall_rating': 4.0,  # Default for featured reviews
+            'country': country,
+            'category_ratings': []  # Featured reviews don't have category breakdowns
+        }
+
+    def test_reviews_extraction(self):
+        self.setup_driver()
+        try:
+            soup = self.load_page(self.hotel_urls[0])
+            hotel_data = self.extract_hotel_basic_info(soup, 1, self.hotel_urls[0])
+            reviews = self.extract_reviews(soup)
+            
+            print(f"\nReviews for {hotel_data['GlobalPropertyName']}:")
+            print(f"Total Reviews Found: {len(reviews)}")
+            for i, review in enumerate(reviews[:2], 1):  # Show first 2
+                print(f"\nReview {i}:")
+                print(f"  User: {review['username']} ({review['country']})")
+                print(f"  Content: {review['content'][:100]}...")
+        finally:
+            self.driver.quit()
+
+    def calculate_sparkling_awards_score(self, review_features, metadata_features=None):
+        """Calculate Hotel Sparkling Awards score"""
+        if metadata_features is None:
+            metadata_features = {'accommodation_metrics': {}, 'location_quality': {}, 'facility_metrics': {}}
+        
+        # Review-based component (65% weight)
+        review_score = 0
+        
+        # Overall metrics (30% of review component)
+        overall_rating = review_features.get('overall_metrics', {}).get('overall_rating', 0)
+        review_count = review_features.get('overall_metrics', {}).get('review_count', 0)
+        
+        if overall_rating > 0:
+            overall_score = (overall_rating / 10) * 100
+            review_count_score = min(100, review_count * 0.5) 
+            
+            overall_metrics_score = (overall_score * 0.70 + review_count_score * 0.30) * self.scoring_weights['review_components']['overall_metrics']
+        else:
+            overall_metrics_score = 0
+        
+        # Category ratings (70% of review component)
+        category_score = 0
+        total_weight = 0
+        
+        for category, data in review_features.get('category_ratings', {}).items():
+            if isinstance(data, dict) and 'score' in data and 'weight' in data:
+                normalized_score = (data['score'] / 10) * 100
+                category_score += normalized_score * data['weight']
+                total_weight += data['weight']
+        
+        if total_weight > 0:
+            category_score = (category_score / total_weight) * self.scoring_weights['review_components']['category_ratings']
+        
+        review_component = overall_metrics_score + category_score
+        
+        # Metadata-based component (35% weight)
+        facility_count = metadata_features.get('facility_metrics', {}).get('total_amenities', 0)
+        management_score = metadata_features.get('facility_metrics', {}).get('management_score', 0)
+        booking_quality = metadata_features.get('facility_metrics', {}).get('booking_quality_score', 0)
+        nearby_attractions = metadata_features.get('location_quality', {}).get('nearby_attractions', 0)
+        transport_access = metadata_features.get('location_quality', {}).get('transport_accessibility', 0)
+        
+        facility_score = min(100, facility_count * 2)
+        management_component = min(100, management_score * 10) if management_score > 0 else 50
+        quality_component = min(100, booking_quality * 20) if booking_quality > 0 else 50
+        location_component = min(100, (nearby_attractions * 5) + (transport_access * 10))
+        
+        metadata_score = (
+            facility_score * 0.30 +
+            location_component * 0.30 +
+            management_component * 0.20 +
+            quality_component * 0.20
+        )
+        
+        # Final score
+        composite_score = (
+            review_component * self.scoring_weights['review_based'] +
+            metadata_score * self.scoring_weights['metadata_based']
+        )
+        
+        return {
+            'sparkling_score': round(composite_score, 2),
+            'review_component': round(review_component, 2),
+            'metadata_component': round(metadata_score, 2),
+            'breakdown': {
+                'overall_metrics_score': round(overall_metrics_score, 2),
+                'category_score': round(category_score, 2),
+                'facility_count': facility_count,
+                'management_score': management_score,
+                'booking_quality': booking_quality,
+                'location_component': round(location_component, 2)
+            }
+        }
+
     def test_metadata_extraction(self):
         self.setup_driver()
         try:
