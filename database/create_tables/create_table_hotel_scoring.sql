@@ -1,0 +1,21 @@
+CREATE TABLE hotel_scoring_table (
+    ranking INTEGER PRIMARY KEY,
+    hotel_id INTEGER NOT NULL REFERENCES hotels(GlobalPropertyID),
+    hotel_name VARCHAR(255) NOT NULL,
+    location TEXT,
+    sparkling_score NUMERIC(5,2),
+    review_component NUMERIC(5,2),
+    metadata_component NUMERIC(5,2),
+    sentiment_score NUMERIC(5,2),
+    total_reviews INTEGER,
+    hotel_stars INTEGER,
+    distance_to_airport NUMERIC(5,2),
+    floors_number INTEGER,
+    rooms_number INTEGER,
+    amenities_rate NUMERIC(5,2),
+    cleanliness_rate NUMERIC(5,2),
+    food_beverage NUMERIC(5,2),
+    sleep_quality NUMERIC(5,2),
+    internet_quality NUMERIC(5,2),
+    last_updated TIMESTAMP
+);

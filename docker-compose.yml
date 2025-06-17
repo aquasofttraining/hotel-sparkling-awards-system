@@ -30,9 +30,9 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data2
-      - ./sql/hotels_db:/docker-entrypoint-initdb.d
-      - ./csv:/docker-entrypoint-initdb.d/csv
+      - pgdata:/var/lib/postgresql/data
+      - ./database/init:/docker-entrypoint-initdb.d
+      - ./database/csv:/docker-entrypoint-initdb.d/csv
 
   pgadmin:
     image: dpage/pgadmin4
@@ -44,7 +44,7 @@ services:
     ports:
       - "5050:80"
     volumes:
-      - pgadmin-data:/var/lib/pgadmin  
+      - pgadmin-data:/var/lib/pgadmin
     depends_on:
       - postgres
 

@@ -2,16 +2,6 @@ import express from 'express';
 import dotenv from 'dotenv';
 import sequelize from './config/database.js';
 
-// Modelele Sequelize (le încarci din `models/index.js`)
-import User from './models/User.js';
-import Role from './models/Role.js';
-import Permission from './models/Permission.js';
-import Review from './models/Review.js';
-import ReviewCategory from './models/ReviewCategory.js';
-import ReviewRating from './models/ReviewRating.js';
-import RolePermission from './models/RolePermission.js';
-
-
 dotenv.config();
 
 const app = express();

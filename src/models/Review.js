@@ -1,53 +1,66 @@
-import  { DataTypes } from 'sequelize';
+import { DataTypes, Model } from 'sequelize';
 import sequelize from '../config/database.js';
 
-const Review = sequelize.define('Review', {
+class Review extends Model {}
+
+Review.init({
   id: {
     type: DataTypes.INTEGER,
-    primaryKey: true,
     autoIncrement: true,
+    primaryKey: true,
   },
   hotel_id: {
     type: DataTypes.INTEGER,
     allowNull: false,
+    references: {
+      model: 'hotels',
+      key: 'GlobalPropertyID',
+    },
   },
   user_id: {
     type: DataTypes.INTEGER,
     allowNull: false,
+    references: {
+      model: 'users',
+      key: 'id',
+    },
   },
   title: {
-    type: DataTypes.STRING(500),
-    allowNull: false,
+    type: DataTypes.STRING(255),
   },
   content: {
     type: DataTypes.TEXT,
     allowNull: false,
   },
   overall_rating: {
-    type: DataTypes.DECIMAL(2, 1),
-    allowNull: false,
-    validate: {
-      min: 1.0,
-      max: 5.0,
-    },
+    type: DataTypes.DECIMAL(3, 2),
   },
   review_date: {
     type: DataTypes.DATEONLY,
-    allowNull: false,
   },
   helpful_votes: {
     type: DataTypes.INTEGER,
     defaultValue: 0,
   },
   platform: {
-    type: DataTypes.STRING(50),
-    defaultValue: 'booking',
+    type: DataTypes.STRING(100),
+  },
+  sentiment_score: {
+    type: DataTypes.DECIMAL(3, 2),
+  },
+  sentiment_label: {
+    type: DataTypes.STRING(20),
+  },
+  confidence: {
+    type: DataTypes.DECIMAL(3, 2),
   },
   created_at: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW,
   },
 }, {
+  sequelize,
+  modelName: 'Review',
   tableName: 'reviews',
   timestamps: false,
 });

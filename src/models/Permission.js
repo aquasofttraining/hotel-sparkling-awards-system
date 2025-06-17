@@ -1,24 +1,27 @@
-import  { DataTypes } from 'sequelize';
+import { DataTypes, Model } from 'sequelize';
 import sequelize from '../config/database.js';
-const Permission = sequelize.define('Permission', {
+
+class Permission extends Model {}
+
+Permission.init({
   id: {
     type: DataTypes.INTEGER,
-    primaryKey: true,
     autoIncrement: true,
+    primaryKey: true,
   },
-  permission: {
+  permission_name: {
     type: DataTypes.STRING(50),
     allowNull: false,
     unique: true,
   },
   description: {
     type: DataTypes.TEXT,
-  }
+  },
 }, {
+  sequelize,
+  modelName: 'Permission',
   tableName: 'permissions',
   timestamps: false,
 });
 
 export default Permission;
-// default export
-
