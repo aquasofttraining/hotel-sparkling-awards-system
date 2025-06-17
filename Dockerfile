@@ -1,20 +1,21 @@
-# Base image
+# 1. Folosește imaginea de bază
 FROM node:20-slim
 
-# Set working directory
+# 2. Setează directorul de lucru
 WORKDIR /app
 
-# Copy only package files for caching
-COPY package*.json ./
-
-# Install dependencies
+# 3. Copiază fișierele de configurare și instalează dependențele
+COPY package*.json tsconfig.json ./
 RUN npm install
 
-# Copy source code
-COPY . .
+# 4. Copiază codul sursă
+COPY ./src ./src
 
-# Expose port
+# 5. Rulează compilarea TypeScript în container
+RUN npx tsc
+
+# 6. Expune portul aplicației
 EXPOSE 3000
 
-# Run the JavaScript app
-CMD ["node", "src/app.js"]
+# 7. Rulează aplicația compilată
+CMD ["node", "dist/app.js"]
