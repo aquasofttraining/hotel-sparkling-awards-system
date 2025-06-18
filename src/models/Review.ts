@@ -27,10 +27,7 @@ Review.init(
     hotel_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      references: {
-        model: 'hotels',
-        key: 'GlobalPropertyID',
-      },
+      field: 'hotel_id', // Maps `hotel_id` from the database to `hotelId` in the model
     },
     user_id: {
       type: DataTypes.INTEGER,

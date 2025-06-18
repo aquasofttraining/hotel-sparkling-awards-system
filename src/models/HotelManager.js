@@ -17,13 +17,10 @@ HotelManager.init({
       key: 'id',
     },
   },
-  hotel_id: {
+  hotelId: {
     type: DataTypes.INTEGER,
     allowNull: false,
-    references: {
-      model: 'hotels',
-      key: 'GlobalPropertyID',
-    },
+    field: 'hotel_id', // Maps `hotel_id` from the database to `hotelId` in the model
   },
   assigned_by: {
     type: DataTypes.INTEGER,

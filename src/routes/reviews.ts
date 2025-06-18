@@ -12,14 +12,15 @@ const router = Router();
  */
 router.get('/', ReviewController.getAllReviews);
 
-router.get('/:hotelId',  ReviewController.getReviewsByHotel);
+router.get('/:hotelId', authenticateToken, ReviewController.getReviewsByHotel);
+
 
 /**
  * @route   POST /api/reviews
  * @desc    Create a new review
  * @access  Public
  */
-router.post('/', ReviewController.createReview);
+router.post('/', authenticateToken, ReviewController.createReview);
 
 router.put('/:id', authenticateToken, ReviewController.updateReview);
 

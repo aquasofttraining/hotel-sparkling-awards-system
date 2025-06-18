@@ -39,11 +39,8 @@ router.get('/name/:name',
  * @desc    Create new hotel entry
  * @access  Private - Administrator, Data Operator
  */
-router.post('/', 
-  authenticateToken, 
-  requireRole(['Administrator', 'Data Operator']),
-  HotelController.createHotel
-);
+router.post('/', authenticateToken, HotelController.createHotel);
+
 
 /**
  * @route   PUT /api/hotels/:id

@@ -32,13 +32,18 @@ class AuthController {
       }
 
       // Generate JWT token
-      const token = jwt.sign({
-        userId: user.id,   // ✅ important: trebuie să fie `userId` ca să fie disponibil în `req.user.userId`
-        roleId: user.roleId,
-        role: user.role?.role,
-        email: user.email,
-        username: user.username,
-      }, process.env.JWT_SECRET as string, { expiresIn: '1h' });
+      const token = jwt.sign(
+        {
+          userId: user.id,
+          roleId: user.roleId,
+          role: user.role?.role,
+          email: user.email,
+          username: user.username,
+        },
+        process.env.JWT_SECRET as string,
+        { expiresIn: '1h' }
+      );
+
 
 
       res.status(200).json({ token });

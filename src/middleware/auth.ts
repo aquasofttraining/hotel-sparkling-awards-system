@@ -22,11 +22,19 @@ export const authenticateToken = (req: AuthenticatedRequest, res: Response, next
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as any;
-    req.user = decoded;
+
+    req.user = {
+      userId: decoded.userId,
+      roleId: decoded.roleId,
+      role: decoded.role,
+      email: decoded.email,
+      username: decoded.username,
+    };
+
+    console.log('Authenticated user:', req.user); // Debug log
     next();
   } catch (err) {
     res.status(403).json({ success: false, message: 'Invalid or expired token' });
-    return;
   }
 };
 

@@ -33,66 +33,67 @@ class ReviewController {
     const user = req.user;
 
     if (!user) {
-      res.status(401).json({ success: false, message: 'Unauthenticated' });
-      return;
-    }
-
-    // Dacă este manager, verificăm dacă este manager la acel hotel
-    if (user.roleId === 1) {
-      const isManager = await HotelManager.findOne({
-        where: {
-          userId: user.userId,
-          hotelId: Number(hotelId),
-          isActive: true
-        }
-      });
-
-      if (!isManager) {
-        res.status(403).json({ success: false, message: 'Access denied: not manager of this hotel' });
+        res.status(401).json({ success: false, message: 'Unauthenticated' });
         return;
-      }
     }
 
-    // Admin, Data Operator, Traveler văd direct
-    // (poți restricționa Traveler după nevoie)
+    // 🔐 Dacă este manager (roleId === 1), verificăm dacă are acces la acest hotel
+    if (user.roleId === 1) {
+        const isManager = await HotelManager.findOne({
+        where: {
+            userId: user.userId,
+            hotelId: Number(hotelId), // Use `hotelId` instead of `hotel_id`
+            isActive: true,
+        },
+        });
+
+        if (!isManager) {
+        res.status(403).json({ success: false, message: 'Access denied: Not manager of this hotel' });
+        return;
+        }
+    }
+
+    // ✅ Admin (3), Traveler (2), Data Operator (4) pot vedea recenziile oricărui hotel
+    if (![1, 2, 3, 4].includes(user.roleId)) {
+        res.status(403).json({ success: false, message: 'Access denied: Unauthorized role' });
+        return;
+    }
 
     try {
-      const reviews = await Review.findAll({
-        where: { hotelId: Number(hotelId) },
-        order: [['created_at', 'DESC']]
-      });
+        const reviews = await Review.findAll({
+          where: { hotel_id: Number(hotelId) }, // Use `hotel_id` instead of `hotelId`
+          order: [['created_at', 'DESC']],
+        });
 
-      res.status(200).json({ success: true, data: reviews });
+        res.status(200).json({ success: true, data: reviews });
     } catch (error) {
-      console.error('Error fetching reviews:', error);
-      res.status(500).json({ success: false, message: 'Failed to fetch reviews' });
+        console.error('Error fetching reviews:', error);
+        res.status(500).json({ success: false, message: 'Failed to fetch reviews' });
     }
-  }
-
+}
 
   /**
    * @desc Create a new review
    * @route POST /api/reviews
    * @access Public
    */
-  static async createReview(req: Request, res: Response): Promise<void> {
+  static async createReview(req: AuthenticatedRequest, res: Response): Promise<void> {
   const {
-    user_id,
-    hotel_id,
-    title,
-    content,
-    overall_rating,
-    review_date,
-    helpful_votes,
-    platform,
-    sentiment_score,
-    sentiment_label,
-    confidence
+    hotel_id, title, content, overall_rating, review_date,
+    helpful_votes, platform, sentiment_score, sentiment_label, confidence
   } = req.body;
+
+  const user = req.user;
+  // todo print user object in console
+    console.log('Authenticated user:', user);
+  if (!user || ![2, 3].includes(user.roleId)) {
+    res.status(403).json({ success: false, message: 'Access denied: Only travelers and admins can create reviews' });
+    return;
+  }
 
   try {
     const newReview = await Review.create({
-      user_id,
+      user_id: user.userId, // Folosește ID-ul utilizatorului logat
       hotel_id,
       title,
       content,
@@ -105,12 +106,13 @@ class ReviewController {
       confidence
     });
 
-    res.status(201).json(newReview);
+    res.status(201).json({ success: true, data: newReview });
   } catch (error) {
     console.error('Error creating review:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 }
+
 
 
   /**

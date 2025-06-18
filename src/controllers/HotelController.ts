@@ -192,14 +192,31 @@ public async getHotelByName(req: AuthenticatedRequest, res: Response): Promise<v
 
   
 
-  public async createHotel(req: Request, res: Response): Promise<void> {
+  public async createHotel(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
+      const user = req.user;
+
+      // Verifică dacă utilizatorul este autentificat
+      if (!user) {
+        res.status(401).json({ success: false, message: 'Unauthenticated' });
+        return;
+      }
+
+      // Permite doar utilizatorilor cu roleId = 3 (Administrator) sau 4 (Data Operator) să creeze hoteluri
+      if (user.roleId !== 3 && user.roleId !== 4) {
+        res.status(403).json({ success: false, message: 'Access denied: Only administrators can create hotels' });
+        return;
+      }
+
+      // Pregătește datele hotelului
       const hotelData = {
         ...req.body,
-        lastUpdated: new Date()
+        lastUpdated: new Date(),
       };
-      
+
+      // Creează hotelul
       const hotel = await Hotel.create(hotelData);
+
       res.status(201).json({ success: true, data: hotel });
     } catch (error) {
       console.error('Create hotel error:', error);
@@ -225,6 +242,7 @@ public async getHotelByName(req: AuthenticatedRequest, res: Response): Promise<v
 
       // ✅ Permisiune doar pentru managerul activ al hotelului
       if (user.roleId === 1) {
+        // Doar dacă e manager, verificăm că e manager activ la acel hotel
         const isManager = await HotelManager.findOne({
           where: { hotelId: id, userId: user.userId, isActive: true }
         });
@@ -233,11 +251,13 @@ public async getHotelByName(req: AuthenticatedRequest, res: Response): Promise<v
           res.status(403).json({ success: false, message: 'Access denied: You are not the manager of this hotel' });
           return;
         }
-      } else {
-        // ❌ Dacă nu e manager, blocăm accesul (sau extinzi pentru admin dacă vrei)
-        res.status(403).json({ success: false, message: 'Access denied: Only managers can update hotel data' });
+      } else if (user.roleId !== 3) {
+        // Doar adminul mai are voie, altfel blocăm
+        res.status(403).json({ success: false, message: 'Access denied: Only managers or admin can update hotel data' });
         return;
       }
+
+
 
       await hotel.update({ ...req.body, lastUpdated: new Date() });
 
