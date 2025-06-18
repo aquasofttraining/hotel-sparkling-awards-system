@@ -508,13 +508,15 @@ class HotelSparklingAwardsSystemScraper:
             'FloorsNumber', 'RoomsNumber', 'sparkling_score', 'last_updated'
         ])
         
-        # generate users data with authentication fields
+        # generate users data with all 4 required roles
         unique_users = set()
         for result in results:
             for review in result['reviews']:
                 unique_users.add(review['username'])
         
         users_data = []
+        
+        # phase 1: reviewers as travelers (role_id = 2)
         for i, username in enumerate(unique_users, 1):
             users_data.append({
                 'id': i,
@@ -531,8 +533,8 @@ class HotelSparklingAwardsSystemScraper:
                 'created_at': datetime.now().isoformat()
             })
         
-        # add manager users for hotel access control
-        for i in range(1, 11):
+        # phase 2: hotel managers (role_id = 1)
+        for i in range(1, 46):
             users_data.append({
                 'id': len(users_data) + 1,
                 'username': f"manager{i}",
@@ -548,6 +550,41 @@ class HotelSparklingAwardsSystemScraper:
                 'created_at': datetime.now().isoformat()
             })
         
+        # phase 3: administrators (role_id = 3)
+        for i in range(1, 7): 
+            users_data.append({
+                'id': len(users_data) + 1,
+                'username': f"admin{i}",
+                'email': f"admin{i}@sparklingawards.com",
+                'password_hash': 'temp_hash',
+                'first_name': f"Administrator",
+                'last_name': f"{i}",
+                'nationality': '',
+                'role_id': 3,  # administrator role
+                'account_status': 'active',
+                'email_verified': True,
+                'review_count': 0,
+                'created_at': datetime.now().isoformat()
+            })
+        
+        # phase 4: data operators (role_id = 4)
+        for i in range(1, 6): 
+            users_data.append({
+                'id': len(users_data) + 1,
+                'username': f"dataop{i}",
+                'email': f"dataop{i}@sparklingawards.com",
+                'password_hash': 'temp_hash',
+                'first_name': f"Data",
+                'last_name': f"Operator{i}",
+                'nationality': '',
+                'role_id': 4,  # data operator role
+                'account_status': 'active',
+                'email_verified': True,
+                'review_count': 0,
+                'created_at': datetime.now().isoformat()
+            })
+        
+        # save users csv with all 4 roles
         self.save_csv('users_sparkling_awards.csv', users_data, [
             'id', 'username', 'email', 'password_hash', 'first_name', 'last_name',
             'nationality', 'role_id', 'account_status', 'email_verified', 
