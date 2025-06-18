@@ -1,0 +1,6 @@
+@echo off
+echo Running TypeScript build...
+npx tsc
+
+echo Starting Docker Compose build and up...
+docker compose up --build

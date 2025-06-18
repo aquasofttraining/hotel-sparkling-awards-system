@@ -1,14 +1,17 @@
 import { Request, Response } from 'express';
 import { Op } from 'sequelize';
-import { Hotel, HotelScoring, Review, HotelManager } from '../models';
+import { Hotel, HotelScoring, Review, HotelManager, Role, User } from '../models';
 
 interface AuthenticatedRequest extends Request {
   user?: {
     userId: number;
-    username: string;
-    role: string;
+    roleId: number;
+    role?: string;       // ✅ adăugat
+    email?: string;      // ✅ adăugat
+    username?: string;   // ✅ adăugat dacă vrei
   };
 }
+
 
 class HotelController {
   public async getHotels(req: AuthenticatedRequest, res: Response): Promise<void> {
@@ -26,7 +29,7 @@ class HotelController {
       }
 
       // Role-based filtering for Hotel Managers
-      if (req.user?.role === 'Hotel Manager') {
+      if (req.user?.roleId === 1) {
         const managedHotels = await HotelManager.findAll({
           where: { userId: req.user.userId, isActive: true },
           attributes: ['hotelId']
@@ -70,39 +73,124 @@ class HotelController {
   }
 
   public async getHotelById(req: AuthenticatedRequest, res: Response): Promise<void> {
-    try {
-      const { id } = req.params;
-      
-      const hotel = await Hotel.findByPk(id, {
-        include: [
-          { model: HotelScoring, as: 'scoring' },
-          { model: Review, as: 'reviews', limit: 5, order: [['createdAt', 'DESC']] }
-        ]
-      });
+  try {
+    const { id } = req.params;
+    const user = req.user;
 
-      if (!hotel) {
-        res.status(404).json({ success: false, message: 'Hotel not found' });
+    if (!user) {
+      res.status(401).json({ success: false, message: 'Unauthenticated' });
+      return;
+    }
+
+    // Caută hotelul cu scor și ultimele 5 review-uri
+    const hotel = await Hotel.findByPk(id, {
+      include: [
+        { model: HotelScoring, as: 'scoring' },
+        { model: Review, as: 'reviews', limit: 5, order: [['created_at', 'DESC']] }
+      ]
+    });
+
+    if (!hotel) {
+      res.status(404).json({ success: false, message: 'Hotel not found' });
+      return;
+    }
+
+    // Role-based access
+    switch (user.roleId) {
+      case 3: // Administrator
+      case 4: // Data Operator
+        res.json({ success: true, data: hotel });
+        return;
+
+      case 1: { // Hotel Manager
+        const isManager = await HotelManager.findOne({
+          where: {
+            userId: user.userId,
+            hotelId: Number(id),
+            isActive: true
+          }
+        });
+
+        if (!isManager) {
+          res.status(403).json({ success: false, message: 'Access denied: Not a manager of this hotel' });
+          return;
+        }
+
+        res.json({ success: true, data: hotel });
         return;
       }
 
-      // Check access for Hotel Managers
-      if (req.user?.role === 'Hotel Manager') {
-        const isManager = await HotelManager.findOne({
-          where: { hotelId: id, userId: req.user.userId, isActive: true }
-        });
-        
-        if (!isManager) {
-          res.status(403).json({ success: false, message: 'Access denied' });
-          return;
+      default:
+        res.status(403).json({ success: false, message: 'Access denied' });
+        return;
+    }
+  } catch (error) {
+    console.error('Get hotel error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch hotel' });
+  }
+}
+
+public async getHotelByName(req: AuthenticatedRequest, res: Response): Promise<void> {
+  try {
+    const { name } = req.params;
+    const user = req.user;
+
+    if (!user) {
+      res.status(401).json({ success: false, message: 'Unauthenticated' });
+      return;
+    }
+
+    // Găsește hotelul după nume (case-insensitive)
+    const hotel = await Hotel.findOne({
+      where: {
+        GlobalPropertyName: { [Op.iLike]: name }
+      },
+      include: [
+        { model: HotelScoring, as: 'scoring' },
+        { model: Review, as: 'reviews', limit: 5, order: [['created_at', 'DESC']] }
+      ]
+    });
+
+    if (!hotel) {
+      res.status(404).json({ success: false, message: 'Hotel not found' });
+      return;
+    }
+
+    // 🔓 Travelers (2), Admins (3), Data Operators (4) au voie
+    if ([2, 3, 4].includes(user.roleId)) {
+      res.json({ success: true, data: hotel });
+      return;
+    }
+
+    // 🔐 Hotel Manager trebuie să fie manager la acel hotel
+    if (user.roleId === 1) {
+      const isManager = await HotelManager.findOne({
+        where: {
+          userId: user.userId,
+          hotelId: hotel.GlobalPropertyID,
+          isActive: true
         }
+      });
+
+      if (isManager) {
+        res.json({ success: true, data: hotel });
+        return;
       }
 
-      res.json({ success: true, data: hotel });
-    } catch (error) {
-      console.error('Get hotel error:', error);
-      res.status(500).json({ success: false, message: 'Failed to fetch hotel' });
+      res.status(403).json({ success: false, message: 'Access denied' });
+      return;
     }
+
+    res.status(403).json({ success: false, message: 'Access denied' });
+  } catch (error) {
+    console.error('Get hotel by name error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch hotel by name' });
   }
+}
+
+
+
+  
 
   public async createHotel(req: Request, res: Response): Promise<void> {
     try {
@@ -122,32 +210,44 @@ class HotelController {
   public async updateHotel(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const { id } = req.params;
+      const user = req.user;
+
+      if (!user) {
+        res.status(401).json({ success: false, message: 'Unauthenticated' });
+        return;
+      }
+
       const hotel = await Hotel.findByPk(id);
-      
       if (!hotel) {
         res.status(404).json({ success: false, message: 'Hotel not found' });
         return;
       }
 
-      // Check permissions for Hotel Managers
-      if (req.user?.role === 'Hotel Manager') {
+      // ✅ Permisiune doar pentru managerul activ al hotelului
+      if (user.roleId === 1) {
         const isManager = await HotelManager.findOne({
-          where: { hotelId: id, userId: req.user.userId, isActive: true }
+          where: { hotelId: id, userId: user.userId, isActive: true }
         });
-        
+
         if (!isManager) {
-          res.status(403).json({ success: false, message: 'Access denied' });
+          res.status(403).json({ success: false, message: 'Access denied: You are not the manager of this hotel' });
           return;
         }
+      } else {
+        // ❌ Dacă nu e manager, blocăm accesul (sau extinzi pentru admin dacă vrei)
+        res.status(403).json({ success: false, message: 'Access denied: Only managers can update hotel data' });
+        return;
       }
 
       await hotel.update({ ...req.body, lastUpdated: new Date() });
+
       res.json({ success: true, data: hotel });
     } catch (error) {
       console.error('Update hotel error:', error);
       res.status(500).json({ success: false, message: 'Failed to update hotel' });
     }
   }
+
 }
 
 export default new HotelController();

@@ -26,19 +26,31 @@ class ScoringController {
 
   public async getHotelScoring(req: Request, res: Response): Promise<void> {
     try {
-      const { limit = 20 } = req.query;
+      const { limit = 20, page = 1, sortBy = 'sparklingScore', sortOrder = 'DESC' } = req.query;
+      const offset = (Number(page) - 1) * Number(limit);
 
-      const scoring = await HotelScoring.findAll({
+      const { count, rows: scoring } = await HotelScoring.findAndCountAll({
         limit: Number(limit),
-        order: [['sparklingScore', 'DESC']],
-        include: [{ 
-          model: Hotel, 
+        offset,
+        order: [[sortBy as string, sortOrder as string]],
+        include: [{
+          model: Hotel,
           as: 'hotel',
-          attributes: ['GlobalPropertyName', 'PropertyAddress1', 'HotelStars']
+          attributes: ['GlobalPropertyName', 'PropertyAddress1', 'HotelStars'],
+          required: false
         }]
       });
 
-      res.json({ success: true, data: scoring });
+      res.json({ 
+        success: true, 
+        data: scoring,
+        pagination: {
+          total: count,
+          page: Number(page),
+          limit: Number(limit),
+          totalPages: Math.ceil(count / Number(limit))
+        }
+      });
     } catch (error) {
       console.error('Get scoring error:', error);
       res.status(500).json({ success: false, message: 'Failed to fetch scoring data' });
@@ -47,6 +59,13 @@ class ScoringController {
 
   public async calculateHotelScore(req: Request, res: Response): Promise<void> {
     try {
+      const user = (req as any).user as { userId: number; username: string; role: string; } | undefined;
+
+      if (!user || !['Administrator', 'Data Operator', 'Hotel Manager'].includes(user.role)) {
+        res.status(403).json({ success: false, message: 'Insufficient permissions' });
+        return;
+      }
+
       const { hotelId } = req.params;
       const weights = { ...this.defaultWeights, ...(req.body.weights || {}) };
 
@@ -59,21 +78,31 @@ class ScoringController {
         return;
       }
 
-      // Calculate scores
+      if (user.role === 'Hotel Manager') {
+        const { HotelManager } = require('../models');
+        const isManager = await HotelManager.findOne({
+          where: { hotelId, userId: user.userId, isActive: true }
+        });
+        
+        if (!isManager) {
+          res.status(403).json({ success: false, message: 'Access denied' });
+          return;
+        }
+      }
+
       const reviewScores = this.calculateReviewScores(hotel.reviews || []);
       const metadataScores = this.calculateMetadataScores(hotel);
       const totalScore = this.calculateWeightedScore(reviewScores, metadataScores, weights);
-      
-      // Update scoring record
+
       await HotelScoring.upsert({
         ranking: 1,
         hotelId: Number(hotelId),
         hotelName: hotel.GlobalPropertyName || 'Unknown',
         location: hotel.PropertyAddress1 || '',
         sparklingScore: Number(totalScore.toFixed(2)),
-        reviewComponent: Number(((reviewScores.amenitiesRate + reviewScores.cleanlinessRate + 
-                         reviewScores.foodBeverage + reviewScores.sleepQuality + 
-                         reviewScores.internetQuality) / 5).toFixed(2)),
+        reviewComponent: Number(((reviewScores.amenitiesRate + reviewScores.cleanlinessRate +
+          reviewScores.foodBeverage + reviewScores.sleepQuality +
+          reviewScores.internetQuality) / 5).toFixed(2)),
         metadataComponent: Number(metadataScores.total.toFixed(2)),
         totalReviews: hotel.reviews?.length || 0,
         hotelStars: hotel.HotelStars,
@@ -105,25 +134,49 @@ class ScoringController {
 
   public async recalculateAllScores(req: Request, res: Response): Promise<void> {
     try {
+      const user = (req as any).user as { userId: number; username: string; role: string; } | undefined;
+
+      if (!user || !['Administrator', 'Data Operator'].includes(user.role)) {
+        res.status(403).json({ success: false, message: 'Insufficient permissions' });
+        return;
+      }
+
       const weights = { ...this.defaultWeights, ...(req.body.weights || {}) };
+      
       const hotels = await Hotel.findAll({
         include: [{ model: Review, as: 'reviews' }]
       });
 
       let processed = 0;
+      const scoringData = [];
+
       for (const hotel of hotels) {
         const reviewScores = this.calculateReviewScores(hotel.reviews || []);
         const metadataScores = this.calculateMetadataScores(hotel);
         const totalScore = this.calculateWeightedScore(reviewScores, metadataScores, weights);
-        
+
+        scoringData.push({
+          hotelId: hotel.GlobalPropertyID,
+          sparklingScore: Number(totalScore.toFixed(2))
+        });
+
         await HotelScoring.upsert({
-          ranking: 1,
+          ranking: processed + 1,
           hotelId: hotel.GlobalPropertyID,
           hotelName: hotel.GlobalPropertyName || 'Unknown',
           sparklingScore: Number(totalScore.toFixed(2)),
           lastUpdated: new Date()
         });
+
         processed++;
+      }
+
+      scoringData.sort((a, b) => b.sparklingScore - a.sparklingScore);
+      for (let i = 0; i < scoringData.length; i++) {
+        await HotelScoring.update(
+          { ranking: i + 1 },
+          { where: { hotelId: scoringData[i].hotelId } }
+        );
       }
 
       res.json({
@@ -175,7 +228,7 @@ class ScoringController {
     const distanceScore = this.normalizeDistance(hotel.DistanceToTheAirport || 10);
     const starScore = hotel.HotelStars || 3;
     const roomScore = this.normalizeRooms(hotel.RoomsNumber || 50);
-    
+
     return {
       distance: distanceScore,
       stars: starScore,

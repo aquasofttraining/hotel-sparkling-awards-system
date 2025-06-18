@@ -135,9 +135,10 @@ SELECT 3, id FROM permissions;
 INSERT INTO roles_permissions (role_id, permission_id)
 SELECT 1, id FROM permissions WHERE permission_name IN ('read_hotels', 'write_hotels', 'read_reviews');
 
--- Traveler: read/write reviews
+
+-- Traveler: read/write reviews, get hotel info
 INSERT INTO roles_permissions (role_id, permission_id)
-SELECT 2, id FROM permissions WHERE permission_name IN ('read_reviews', 'write_reviews');
+SELECT 2, id FROM permissions WHERE permission_name IN ('read_reviews', 'write_reviews', 'read_hotels');
 
 -- Data Operator: read everything
 INSERT INTO roles_permissions (role_id, permission_id)
@@ -159,6 +160,9 @@ WITH (FORMAT csv, HEADER true, DELIMITER ',', ENCODING 'UTF8', NULL '\N');
 COPY public.reviews(id, hotel_id, user_id, title, content, overall_rating, review_date, helpful_votes, platform, sentiment_score, sentiment_label, confidence, created_at)
 FROM '/docker-entrypoint-initdb.d/csv/reviews_sparkling_awards.csv' 
 WITH (FORMAT csv, HEADER true, DELIMITER ',', ENCODING 'UTF8', NULL '\N');
+
+
+SELECT setval('reviews_id_seq', (SELECT MAX(id) FROM reviews));
 
 COPY public.review_ratings(id, review_id, category_id, rating_value, created_at)
 FROM '/docker-entrypoint-initdb.d/csv/review_ratings_sparkling_awards.csv'

@@ -1,14 +1,18 @@
-
-import { DataTypes, Model, Optional, Association, NonAttribute } from 'sequelize';
+import {
+  DataTypes,
+  Model,
+  Optional,
+  Association,
+  NonAttribute
+} from 'sequelize';
 import sequelize from '../config/database';
-import bcrypt from 'bcrypt';
-import { Role, Review, HotelManager } from './index'; 
+import { Role, Review, HotelManager } from './index';
 
 interface UserAttributes {
   id: number;
   username: string;
-  email: string;  
-  passwordHash: string;  
+  email: string;
+  passwordHash: string;
   firstName?: string;
   lastName?: string;
   nationality?: string;
@@ -24,8 +28,8 @@ interface UserCreationAttributes extends Optional<UserAttributes, 'id' | 'emailV
 class User extends Model<UserAttributes, UserCreationAttributes> implements UserAttributes {
   public id!: number;
   public username!: string;
-  public email!: string; 
-  public passwordHash!: string; 
+  public email!: string;
+  public passwordHash!: string;
   public firstName?: string;
   public lastName?: string;
   public nationality?: string;
@@ -35,12 +39,11 @@ class User extends Model<UserAttributes, UserCreationAttributes> implements User
   public reviewCount!: number;
   public createdAt!: Date;
 
-  // Association properties - these are NOT database columns
+  // Associations
   public role?: NonAttribute<Role>;
   public reviews?: NonAttribute<Review[]>;
   public managedHotels?: NonAttribute<HotelManager[]>;
 
-  // Association static properties
   public static associations: {
     role: Association<User, Role>;
     reviews: Association<User, Review>;
@@ -48,93 +51,84 @@ class User extends Model<UserAttributes, UserCreationAttributes> implements User
   };
 
   public async comparePassword(password: string): Promise<boolean> {
-    if (!this.passwordHash) return false;
-    return bcrypt.compare(password, this.passwordHash);
+    return password === this.passwordHash;
   }
 }
 
-User.init({
-  id: {
-    type: DataTypes.INTEGER,
-    autoIncrement: true,
-    primaryKey: true,
-  },
-  username: {
-    type: DataTypes.STRING(100),
-    allowNull: false,
-    unique: true,
-  },
-  email: {
-    type: DataTypes.STRING(255),
-    allowNull: false,
-    unique: true,
-  },
-  passwordHash: {
-    type: DataTypes.STRING(255),
-    allowNull: false,
-    field: 'password_hash',
-  },
-  firstName: {
-    type: DataTypes.STRING(100),
-    allowNull: true,
-    field: 'first_name',
-  },
-  lastName: {
-    type: DataTypes.STRING(100),
-    allowNull: true,
-    field: 'last_name',
-  },
-  nationality: {
-    type: DataTypes.STRING(100),
-    allowNull: true,
-  },
-  roleId: {
-    type: DataTypes.INTEGER,
-    allowNull: true,
-    field: 'role_id',
-    references: {
-      model: 'roles',
-      key: 'id',
+User.init(
+  {
+    id: {
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
+      primaryKey: true
     },
-  },
-  accountStatus: {
-    type: DataTypes.STRING(50),
-    allowNull: true,
-    defaultValue: 'active',
-    field: 'account_status',
-  },
-  emailVerified: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: false,
-    field: 'email_verified',
-  },
-  reviewCount: {
-    type: DataTypes.INTEGER,
-    defaultValue: 0,
-    field: 'review_count',
-  },
-  createdAt: {
-    type: DataTypes.DATE,
-    defaultValue: DataTypes.NOW,
-    field: 'created_at',
-  },
-}, {
-  sequelize,
-  modelName: 'User',
-  tableName: 'users',
-  timestamps: false,
-  hooks: {
-    beforeCreate: async (user: User) => {
-      if (user.passwordHash) {
-        user.passwordHash = await bcrypt.hash(user.passwordHash, 10);
+    username: {
+      type: DataTypes.STRING(100),
+      allowNull: false,
+      unique: true
+    },
+    email: {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+      unique: true
+    },
+    passwordHash: {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+      field: 'password_hash'
+    },
+    firstName: {
+      type: DataTypes.STRING(100),
+      allowNull: true,
+      field: 'first_name'
+    },
+    lastName: {
+      type: DataTypes.STRING(100),
+      allowNull: true,
+      field: 'last_name'
+    },
+    nationality: {
+      type: DataTypes.STRING(100),
+      allowNull: true
+    },
+    roleId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      field: 'role_id',
+      references: {
+        model: 'roles',
+        key: 'id'
       }
     },
-    beforeUpdate: async (user: User) => {
-      if (user.changed('passwordHash')) {
-        user.passwordHash = await bcrypt.hash(user.passwordHash, 10);
-      }
+    accountStatus: {
+      type: DataTypes.STRING(50),
+      allowNull: true,
+      defaultValue: 'active',
+      field: 'account_status'
     },
+    emailVerified: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+      field: 'email_verified'
+    },
+    reviewCount: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+      field: 'review_count'
+    },
+    createdAt: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
+      field: 'created_at'
+    }
   },
-});
+  {
+    sequelize,
+    modelName: 'User',
+    tableName: 'users',
+    timestamps: false
+    // No hooks
+  }
+);
 
 export default User;

@@ -1,20 +1,20 @@
-# Base image
-FROM node:20-slim
+FROM node:20-alpine
 
-# Set working directory
+# Needed for native modules like bcrypt
+RUN apk add --no-cache make gcc g++ python3
+
 WORKDIR /app
 
-# Copy only package files for caching
-COPY package*.json ./
+COPY package*.json tsconfig.json ./
 
-# Install dependencies
+# Only now do install to avoid copying Windows-built binaries
 RUN npm install
+RUN npm rebuild bcrypt --build-from-source
 
-# Copy source code
-COPY . .
+COPY ./src ./src
 
-# Expose port
+RUN npm run build
+
 EXPOSE 3000
 
-# Run the JavaScript app
-CMD ["node", "src/app.js"]
+CMD ["node", "dist/app.js"]

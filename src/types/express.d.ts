@@ -5,9 +5,9 @@ declare global {
     interface Request {
       user?: {
         userId: number;
-        username: string;
-        role: string;
+        roleId: number; // ✅ folosești roleId în JWT și logică
         email?: string;
+        username?: string;
       };
     }
   }
