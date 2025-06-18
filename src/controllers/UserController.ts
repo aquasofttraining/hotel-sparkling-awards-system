@@ -4,8 +4,10 @@ import { User, Role, HotelManager } from '../models';
 interface AuthenticatedRequest extends Request {
   user?: {
     userId: number;
-    username: string;
-    role: string;
+    roleId: number;
+    role?: string;       // ✅ adăugat
+    email?: string;      // ✅ adăugat
+    username?: string;   // ✅ adăugat dacă vrei
   };
 }
 

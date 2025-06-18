@@ -2,6 +2,13 @@ import express, { Request, Response } from 'express';
 import dotenv from 'dotenv';
 import sequelize from './config/database';
 
+// 🔻 RUTE IMPORTATE
+import authRoutes from './routes/auth_routes';
+import userRoutes from './routes/users';
+import hotelRoutes from './routes/hotels';
+import reviewRoutes from './routes/reviews';
+import scoringRoutes from './routes/scoring';
+
 dotenv.config();
 
 const app = express();
@@ -9,7 +16,14 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
-// Basic route
+// 🔻 MOUNT ROUTES
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/hotels', hotelRoutes);
+app.use('/api/reviews', reviewRoutes);
+app.use('/api/scoring', scoringRoutes);
+
+// Test root
 app.get('/', (req: Request, res: Response) => {
   res.send('Hotel Sparkling Awards API is running!');
 });
@@ -20,7 +34,6 @@ app.get('/', (req: Request, res: Response) => {
     await sequelize.authenticate();
     console.log('Connected to the database.');
 
-    // You can use { force: true } to reset the DB or { alter: true } to apply schema changes
     await sequelize.sync();
 
     app.listen(PORT, () => {

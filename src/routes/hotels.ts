@@ -25,6 +25,16 @@ router.get('/:id',
 );
 
 /**
+ * @route   GET /api/hotels/name
+ * @desc    Get hotel by name
+ * @access  Private - Travelers, Hotel Managers, Administrators
+ * */
+router.get('/name/:name',
+  authenticateToken,
+  HotelController.getHotelByName
+);
+
+/**
  * @route   POST /api/hotels
  * @desc    Create new hotel entry
  * @access  Private - Administrator, Data Operator
@@ -40,10 +50,7 @@ router.post('/',
  * @desc    Update hotel information
  * @access  Private - Administrator, Hotel Manager (own hotels only)
  */
-router.put('/:id', 
-  authenticateToken, 
-  requireRole(['Administrator', 'Hotel Manager']),
-  HotelController.updateHotel
-);
+
+router.put('/:id', authenticateToken, HotelController.updateHotel);
 
 export default router;

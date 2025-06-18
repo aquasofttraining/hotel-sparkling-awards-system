@@ -4,8 +4,10 @@ import jwt from 'jsonwebtoken';
 interface AuthenticatedRequest extends Request {
   user?: {
     userId: number;
-    username: string;
-    role: string;
+    roleId: number;
+    role?: string;       // ✅ adăugat
+    email?: string;      // ✅ adăugat
+    username?: string;   // ✅ adăugat dacă vrei
   };
 }
 
@@ -35,7 +37,7 @@ export const requireRole = (allowedRoles: string[]) => {
       return;
     }
 
-    if (!allowedRoles.includes(req.user.role)) {
+    if (!req.user.role || !allowedRoles.includes(req.user.role)) {
       res.status(403).json({ success: false, message: 'Insufficient permissions' });
       return;
     }

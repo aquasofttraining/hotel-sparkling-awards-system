@@ -1,21 +1,20 @@
-# 1. Folosește imaginea de bază
-FROM node:20-slim
+FROM node:20-alpine
 
-# 2. Setează directorul de lucru
+# Needed for native modules like bcrypt
+RUN apk add --no-cache make gcc g++ python3
+
 WORKDIR /app
 
-# 3. Copiază fișierele de configurare și instalează dependențele
 COPY package*.json tsconfig.json ./
-RUN npm install
 
-# 4. Copiază codul sursă
+# Only now do install to avoid copying Windows-built binaries
+RUN npm install
+RUN npm rebuild bcrypt --build-from-source
+
 COPY ./src ./src
 
-# 5. Rulează compilarea TypeScript în container
-RUN npx tsc
+RUN npm run build
 
-# 6. Expune portul aplicației
 EXPOSE 3000
 
-# 7. Rulează aplicația compilată
 CMD ["node", "dist/app.js"]

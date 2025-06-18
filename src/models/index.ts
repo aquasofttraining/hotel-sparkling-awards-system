@@ -32,6 +32,9 @@ Permission.belongsToMany(Role, {
 User.hasMany(Review, { foreignKey: 'user_id' });
 Review.belongsTo(User, { foreignKey: 'user_id' });
 
+
+
+
 // Review <-> ReviewRating (1:N)
 Review.hasMany(ReviewRating, { foreignKey: 'review_id' });
 ReviewRating.belongsTo(Review, { foreignKey: 'review_id' });
@@ -43,16 +46,22 @@ HotelManager.belongsTo(User, {
 });
 
 // Hotel <-> Review (1:N)
-Hotel.hasMany(Review, { foreignKey: 'hotel_id' });
-Review.belongsTo(Hotel, { foreignKey: 'hotel_id' });
+Hotel.hasMany(Review, { foreignKey: 'hotel_id', as: 'reviews' });
+Review.belongsTo(Hotel, { foreignKey: 'hotel_id', as: 'hotel' });
 
 // Hotel <-> HotelManager (1:N)
 Hotel.hasMany(HotelManager, { foreignKey: 'hotel_id' });
 HotelManager.belongsTo(Hotel, { foreignKey: 'hotel_id' });
 
 // Hotel <-> HotelScoring (1:1)
-Hotel.hasOne(HotelScoring, { foreignKey: 'hotel_id' });
-HotelScoring.belongsTo(Hotel, { foreignKey: 'hotel_id' });
+Hotel.hasOne(HotelScoring, {
+  foreignKey: 'hotel_id',
+  as: 'scoring' // 👈 acest alias trebuie să fie aici ca să funcționeze include-ul
+});
+HotelScoring.belongsTo(Hotel, {
+  foreignKey: 'hotel_id',
+  as: 'hotel' // acest alias nu e obligatoriu, dar e util dacă vrei acces de la HotelScoring spre Hotel
+});
 
 // ----------------------
 // Export everything

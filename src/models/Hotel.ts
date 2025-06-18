@@ -52,52 +52,65 @@ class Hotel extends Model<HotelAttributes, HotelCreationAttributes> implements H
 
 Hotel.init({
   GlobalPropertyID: {
-    type: DataTypes.INTEGER,
-    primaryKey: true,
+  type: DataTypes.INTEGER,
+  primaryKey: true,
+  field: 'globalpropertyid', // 👈 Asta lipsea
   },
+
   GlobalPropertyName: {
     type: DataTypes.STRING(255),
     allowNull: true,
+    field: 'globalpropertyname', // 👈 Asta lipsea
   },
   PropertyAddress1: {
     type: DataTypes.TEXT,
     allowNull: true,
+    field: 'propertyaddress1', // 👈 Asta lipsea
   },
   CityID: {
     type: DataTypes.INTEGER,
     allowNull: true,
+    field: 'cityid', // 👈 Asta lipsea
   },
   PropertyStateProvinceID: {
     type: DataTypes.INTEGER,
     allowNull: true,
+    field: 'propertystateprovinceid', // 👈 Asta lipsea
   },
   PropertyLatitude: {
     type: DataTypes.DOUBLE,
     allowNull: true,
+    field: 'propertylatitude', // 👈 Asta lipsea
   },
   PropertyLongitude: {
     type: DataTypes.DOUBLE,
     allowNull: true,
+    field: 'propertylongitude', // 👈 Asta lipsea
   },
   SabrePropertyRating: {
     type: DataTypes.DECIMAL(3, 1),
     allowNull: true,
+    field: 'sabrepropertyrating', // 👈 Asta lipsea
   },
   HotelStars: {
     type: DataTypes.INTEGER,
     allowNull: true,
+    field: 'hotelstars', // 👈 Asta lipsea
   },
   DistanceToTheAirport: {
     type: DataTypes.DECIMAL(5, 2),
     allowNull: true,
+    field: 'distancetotheairport', // 👈 Asta lipsea
   },
   FloorsNumber: {
     type: DataTypes.INTEGER,
     allowNull: true,
+    field: 'floorsnumber', // 👈 Asta lipsea
   },
   RoomsNumber: {
     type: DataTypes.INTEGER,
     allowNull: true,
+    field: 'roomsnumber', // 👈 Asta lipsea
   },
   sparklingScore: {
     type: DataTypes.DECIMAL(5, 2),
