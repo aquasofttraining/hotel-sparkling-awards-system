@@ -5,14 +5,7 @@ import { authenticateToken, requireRole } from '../middleware/auth';
 
 const router = Router();
 
-/**
- * @route   GET /api/reviews
- * @desc    Get all reviews
- * @access  Public
- */
-router.get('/', ReviewController.getAllReviews);
-
-router.get('/:hotelId', authenticateToken, ReviewController.getReviewsByHotel);
+router.get('/:name', authenticateToken, ReviewController.getAllReviewsByHotelName);
 
 
 /**
@@ -21,7 +14,6 @@ router.get('/:hotelId', authenticateToken, ReviewController.getReviewsByHotel);
  * @access  Public
  */
 router.post('/', authenticateToken, ReviewController.createReview);
-
 router.put('/:id', authenticateToken, ReviewController.updateReview);
 
 /**

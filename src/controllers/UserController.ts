@@ -12,82 +12,95 @@ interface AuthenticatedRequest extends Request {
 }
 
 class UserController {
-  public async getUsers(req: Request, res: Response): Promise<void> {
+  public async getUsers(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const { page = 1, limit = 10 } = req.query;
-      const offset = (Number(page) - 1) * Number(limit);
+      const user = req.user;
 
-      const { count, rows: users } = await User.findAndCountAll({
-        limit: Number(limit),
-        offset,
-        order: [['username', 'ASC']],
-        attributes: { exclude: ['passwordHash'] },
-        include: [{ model: Role, as: 'role' }]
-      });
+      // Verifică dacă utilizatorul este autentificat
+      if (!user) {
+        res.status(401).json({ success: false, message: 'Unauthenticated' });
+        return;
+      }
 
-      res.json({
-        success: true,
-        data: users,
-        pagination: {
-          total: count,
-          page: Number(page),
-          limit: Number(limit),
-          totalPages: Math.ceil(count / Number(limit))
-        }
-      });
+      // Permite doar utilizatorilor cu roleId = 3 sau roleId = 4 să acceseze ruta
+      if (![3, 4].includes(user.roleId)) {
+        res.status(403).json({ success: false, message: 'Access denied: You do not have permission to view users' });
+        return;
+      }
+
+      // Obține lista utilizatorilor
+      const users = await User.findAll();
+      res.status(200).json({ success: true, data: users });
     } catch (error) {
       console.error('Get users error:', error);
-      res.status(500).json({ success: false, message: 'Failed to fetch users' });
+      res.status(500).json({ success: false, message: 'Failed to retrieve users' });
     }
   }
 
-  public async getUserById(req: Request, res: Response): Promise<void> {
+  public async getUserById(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const { id } = req.params;
-      
-      const user = await User.findByPk(id, {
-        include: [{ model: Role, as: 'role' }],
-        attributes: { exclude: ['passwordHash'] }
-      });
+      const user = req.user;
 
+      // Verifică dacă utilizatorul este autentificat
       if (!user) {
+        res.status(401).json({ success: false, message: 'Unauthenticated' });
+        return;
+      }
+
+      // Permite doar utilizatorilor cu roleId = 3 sau roleId = 4 să acceseze ruta
+      if (![3, 4].includes(user.roleId)) {
+        res.status(403).json({ success: false, message: 'Access denied: You do not have permission to view user details' });
+        return;
+      }
+
+      const { id } = req.params; // ID-ul utilizatorului
+
+      // Găsește utilizatorul după ID
+      const userDetails = await User.findByPk(id);
+      if (!userDetails) {
         res.status(404).json({ success: false, message: 'User not found' });
         return;
       }
 
-      res.json({ success: true, data: user });
+      res.status(200).json({ success: true, data: userDetails });
     } catch (error) {
-      console.error('Get user error:', error);
-      res.status(500).json({ success: false, message: 'Failed to fetch user' });
+      console.error('Get user by ID error:', error);
+      res.status(500).json({ success: false, message: 'Failed to retrieve user details' });
     }
   }
 
   public async updateUser(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const { id } = req.params;
-      const updateData = { ...req.body };
+      const user = req.user;
 
-      // Remove sensitive fields
-      delete updateData.passwordHash;
-      delete updateData.id;
-
-      const user = await User.findByPk(id);
+      // Verifică dacă utilizatorul este autentificat
       if (!user) {
+        res.status(401).json({ success: false, message: 'Unauthenticated' });
+        return;
+      }
+
+      // Permite doar utilizatorilor cu roleId = 3 (Administrator) să acceseze ruta
+      if (user.roleId !== 3) {
+        res.status(403).json({ success: false, message: 'Access denied: Only administrators can update user details' });
+        return;
+      }
+
+      const { id } = req.params; // ID-ul utilizatorului de actualizat
+      const userData = req.body; // Datele de actualizat
+
+      // Găsește utilizatorul după ID
+      const userToUpdate = await User.findByPk(id);
+      if (!userToUpdate) {
         res.status(404).json({ success: false, message: 'User not found' });
         return;
       }
 
-      // Only admins can change roles
-      if (updateData.roleId && req.user?.role !== 'Administrator') {
-        res.status(403).json({ success: false, message: 'Only administrators can change roles' });
-        return;
-      }
-
-      await user.update(updateData);
-      res.json({ success: true, data: user });
+      // Actualizează utilizatorul
+      await userToUpdate.update(userData);
+      res.status(200).json({ success: true, message: 'User updated successfully', data: userToUpdate });
     } catch (error) {
       console.error('Update user error:', error);
-      res.status(500).json({ success: false, message: 'Failed to update user' });
+      res.status(500).json({ success: false, message: 'Failed to update user details' });
     }
   }
 
@@ -111,6 +124,67 @@ class UserController {
     } catch (error) {
       console.error('Assign manager error:', error);
       res.status(500).json({ success: false, message: 'Failed to assign hotel manager' });
+    }
+  }
+
+  public async createUser(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const user = req.user;
+
+      // Verifică dacă utilizatorul este autentificat
+      if (!user) {
+        res.status(401).json({ success: false, message: 'Unauthenticated' });
+        return;
+      }
+
+      // Permite doar utilizatorilor cu roleId = 3 (Administrator) să acceseze ruta
+      if (user.roleId !== 3) {
+        res.status(403).json({ success: false, message: 'Access denied: Only administrators can create users' });
+        return;
+      }
+
+      const userData = req.body; // Datele utilizatorului de creat
+
+      // Creează utilizatorul
+      const newUser = await User.create(userData);
+      res.status(201).json({ success: true, message: 'User created successfully', data: newUser });
+    } catch (error) {
+      console.error('Create user error:', error);
+      res.status(500).json({ success: false, message: 'Failed to create user' });
+    }
+  }
+
+  public async deleteUser(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const user = req.user;
+
+      // Verifică dacă utilizatorul este autentificat
+      if (!user) {
+        res.status(401).json({ success: false, message: 'Unauthenticated' });
+        return;
+      }
+
+      // Permite doar utilizatorilor cu roleId = 3 (Administrator) să acceseze ruta
+      if (user.roleId !== 3) {
+        res.status(403).json({ success: false, message: 'Access denied: Only administrators can delete users' });
+        return;
+      }
+
+      const { id } = req.params; // ID-ul utilizatorului de șters
+
+      // Găsește utilizatorul după ID
+      const userToDelete = await User.findByPk(id);
+      if (!userToDelete) {
+        res.status(404).json({ success: false, message: 'User not found' });
+        return;
+      }
+
+      // Șterge utilizatorul
+      await userToDelete.destroy();
+      res.status(200).json({ success: true, message: 'User deleted successfully' });
+    } catch (error) {
+      console.error('Delete user error:', error);
+      res.status(500).json({ success: false, message: 'Failed to delete user' });
     }
   }
 }

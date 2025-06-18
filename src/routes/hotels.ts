@@ -50,4 +50,6 @@ router.post('/', authenticateToken, HotelController.createHotel);
 
 router.put('/:id', authenticateToken, HotelController.updateHotel);
 
+
+
 export default router;
