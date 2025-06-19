@@ -15,8 +15,8 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(cors({
-  origin: 'http://localhost:3001', // ✅ frontend-ul tău
-  credentials: true               // ✅ doar dacă trimiți cookie-uri sau tokenuri în header
+  origin: 'http://localhost:3001',
+  credentials: true
 }));
 
 app.use(express.json());

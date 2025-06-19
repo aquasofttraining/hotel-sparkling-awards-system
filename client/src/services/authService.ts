@@ -25,11 +25,11 @@ interface JWTPayload {
   exp: number;
 }
 
-const API_URL = 'http://localhost:3001/api';
+const API_URL = 'http://localhost:3000/api/auth';
 
 export const loginUser = async (email: string, password: string): Promise<User> => {
   try {
-    const response = await axios.post<LoginResponse>(`${API_URL}/auth/login`, { 
+    const response = await axios.post<LoginResponse>(`${API_URL}/login`, { 
       email, 
       password 
     });
