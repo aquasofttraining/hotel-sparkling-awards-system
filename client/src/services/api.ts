@@ -1,16 +1,18 @@
-// src/services/api.ts
 import axios from 'axios';
+import { loginUser, getCurrentUser,  logoutUser, getToken } from '../services/authServices';
 
-const instance = axios.create({
-  baseURL: 'http://localhost:3000/api',
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+
+const api = axios.create({
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Adaugă tokenul JWT în headers automat
-instance.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
+
+api.interceptors.request.use((config) => {
+  const token = getToken();
   if (token) {
     if (!config.headers) {
       config.headers = {};
@@ -18,6 +20,20 @@ instance.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
+}, (error) => {
+  return Promise.reject(error);
 });
 
-export default instance;
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Handle 401 unauthenticated errors by redirecting to login
+    if (error.response?.status === 401) {
+      logoutUser(); // Clear token
+      window.location.href = '/login'; // Redirect to login page
+    }
+    return Promise.reject(error);
+  }
+);
+
+export default api;

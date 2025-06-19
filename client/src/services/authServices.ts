@@ -28,3 +28,9 @@ export const getCurrentUser = (): User | null => {
 export const logoutUser = () => {
   localStorage.removeItem('token');
 };
+
+export const getToken = (): string | null => {
+    return localStorage.getItem('token');
+};
+
+
