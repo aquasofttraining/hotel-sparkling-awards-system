@@ -9,6 +9,7 @@ import DashboardPage from './pages/DashboardPage';
 import ProfilePage from './pages/ProfilePage';
 import UnauthorizedPage from './pages/UnauthorizedPage';
 import ExploreHotelsPage from './pages/ExploreHotelsPage';
+import ReviewsPage from './pages/ReviewsPage';
 
 import Layout from './components/common/Layout';
 import UserProfile from './components/users/UserProfile';
@@ -37,6 +38,7 @@ const App: React.FC = () => {
         <Route path="hotels/:id" element={<HotelDetails />} />
         <Route path="hotels/add" element={<HotelForm />} />
         <Route path="hotels/edit/:id" element={<HotelForm />} />
+        <Route path="reviews" element={<ReviewsPage />} />
 
         {/* Admin-only section */}
         <Route
