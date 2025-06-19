@@ -1,0 +1,22 @@
+.navigation {
+  background-color: #003366;
+  padding: 1rem;
+}
+
+.navigation ul {
+  display: flex;
+  list-style: none;
+  gap: 1rem;
+}
+
+.navigation a {
+  color: white;
+  text-decoration: none;
+}
+
+.navigation button {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+}
