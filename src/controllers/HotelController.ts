@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { Op } from 'sequelize';
-import { Hotel, HotelScoring, Review, HotelManager, Role, User } from '../models';
+import { Hotel, Review, HotelManager, HotelScoring } from '../models';
 
 interface AuthenticatedRequest extends Request {
   user?: {
@@ -8,10 +8,9 @@ interface AuthenticatedRequest extends Request {
     roleId: number;
     role?: string;       // ✅ adăugat
     email?: string;      // ✅ adăugat
-    username?: string;   // ✅ adăugat dacă vrei
+    username?: string;   // ✅ adăgat dacă vrei
   };
 }
-
 
 class HotelController {
   public async getHotels(req: AuthenticatedRequest, res: Response): Promise<void> {
@@ -53,7 +52,7 @@ class HotelController {
         limit: Number(limit),
         offset,
         order: [['GlobalPropertyName', 'ASC']],
-        include: [{ model: HotelScoring, as: 'scoring' }]
+        include: [{ model: HotelScoring, as: 'scoring' }] // Folosește modelul Sequelize
       });
 
       res.json({
@@ -82,7 +81,6 @@ class HotelController {
       return;
     }
 
-    // Caută hotelul cu scor și ultimele 5 review-uri
     const hotel = await Hotel.findByPk(id, {
       include: [
         { model: HotelScoring, as: 'scoring' },
@@ -90,40 +88,41 @@ class HotelController {
       ]
     });
 
+    if (hotel && hotel.scoring) {
+      hotel.scoring.sparklingScore = hotel.scoring.sparklingScore || 0; // Default to 0 if null or undefined
+    }
+
     if (!hotel) {
       res.status(404).json({ success: false, message: 'Hotel not found' });
       return;
     }
 
-    // Role-based access
-    switch (user.roleId) {
-      case 3: // Administrator
-      case 4: // Data Operator
-        res.json({ success: true, data: hotel });
-        return;
+    // Permite accesul pentru roleId = 2, 3, 4
+    if ([2, 3, 4].includes(user.roleId)) {
+      res.status(200).json({ success: true, data: hotel });
+      return;
+    }
 
-      case 1: { // Hotel Manager
-        const isManager = await HotelManager.findOne({
-          where: {
-            userId: user.userId,
-            hotelId: Number(id),
-            isActive: true
-          }
-        });
-
-        if (!isManager) {
-          res.status(403).json({ success: false, message: 'Access denied: Not a manager of this hotel' });
-          return;
+    // Hotel Manager trebuie să fie manager la acel hotel
+    if (user.roleId === 1) {
+      const isManager = await HotelManager.findOne({
+        where: {
+          userId: user.userId,
+          hotelId: hotel.GlobalPropertyID,
+          isActive: true
         }
+      });
 
-        res.json({ success: true, data: hotel });
+      if (isManager) {
+        res.status(200).json({ success: true, data: hotel });
         return;
       }
 
-      default:
-        res.status(403).json({ success: false, message: 'Access denied' });
-        return;
+      res.status(403).json({ success: false, message: 'Access denied' });
+      return;
     }
+
+    res.status(403).json({ success: false, message: 'Access denied' });
   } catch (error) {
     console.error('Get hotel error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch hotel' });

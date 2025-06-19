@@ -5,9 +5,9 @@ interface AuthenticatedRequest extends Request {
   user?: {
     userId: number;
     roleId: number;
-    role?: string;       // ✅ adăugat
-    email?: string;      // ✅ adăugat
-    username?: string;   // ✅ adăugat dacă vrei
+    role?: string;
+    email?: string;
+    username?: string;
   };
 }
 
@@ -16,17 +16,17 @@ export const authenticateToken = (req: AuthenticatedRequest, res: Response, next
   const token = authHeader && authHeader.split(' ')[1];
 
   if (!token) {
-    res.status(401).json({ success: false, message: 'Access token required' });
-    return;
+    res.status(401).json({ message: 'Token missing' });
+    return; // Oprește execuția funcției
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as any;
-    req.user = decoded;
-    next();
-  } catch (err) {
-    res.status(403).json({ success: false, message: 'Invalid or expired token' });
-    return;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
+    req.user = decoded as any; // Setează utilizatorul în req.user
+    next(); // Continuă execuția către următorul middleware
+  } catch (error) {
+    res.status(403).json({ message: 'Invalid token' });
+    return; // Oprește execuția funcției
   }
 };
 
