@@ -7,6 +7,7 @@ export interface User {
   role?: string;
   email?: string;
   username?: string;
+  hotelId?: number;
 }
 
 interface LoginResponse {

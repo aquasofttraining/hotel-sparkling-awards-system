@@ -9,7 +9,7 @@ import DashboardPage from './pages/DashboardPage';
 import ProfilePage from './pages/ProfilePage';
 import UnauthorizedPage from './pages/UnauthorizedPage';
 import ExploreHotelsPage from './pages/ExploreHotelsPage';
-import ReviewsPage from './pages/ReviewsPage';
+import HotelLeaderboardPage from './pages/HotelLeaderBoardPage';
 
 import Layout from './components/common/Layout';
 import UserProfile from './components/users/UserProfile';
@@ -35,12 +35,28 @@ const App: React.FC = () => {
         <Route index element={<DashboardPage />} />
         <Route path="profile" element={<ProfilePage />} />
         <Route path="explore-hotels" element={<ExploreHotelsPage />} />
+        <Route path="scoring-leaderboard" element={<HotelLeaderboardPage />} />
+        
+        {/* Hotel routes */}
         <Route path="hotels/:id" element={<HotelDetails />} />
-        <Route path="hotels/add" element={<HotelForm />} />
-        <Route path="hotels/edit/:id" element={<HotelForm />} />
-        <Route path="reviews" element={<ReviewsPage />} />
+        <Route 
+          path="hotels/add" 
+          element={
+            <RoleGuard allowedRoles={['Administrator', 'Data Operator']}>
+              <HotelForm />
+            </RoleGuard>
+          } 
+        />
+        <Route 
+          path="hotels/edit/:id" 
+          element={
+            <RoleGuard allowedRoles={['Administrator', 'Hotel Manager']}>
+              <HotelForm />
+            </RoleGuard>
+          } 
+        />
 
-        {/* Admin-only section */}
+        {/* Admin-only routes */}
         <Route
           path="admin"
           element={
