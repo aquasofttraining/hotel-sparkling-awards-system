@@ -16,6 +16,13 @@ const HotelDetails: React.FC = () => {
   const [calculatingScore, setCalculatingScore] = useState(false);
   const user = authService.getCurrentUser();
 
+  // Helper function to safely format numbers
+  const safeToFixed = (value: any, decimals: number = 2): string => {
+    if (!value && value !== 0) return 'N/A';
+    const num = Number(value);
+    return isNaN(num) ? 'N/A' : num.toFixed(decimals);
+  };
+
   const isHotelManagerOfThisHotel = user?.role === 'Hotel Manager' && user.hotelId === hotelId;
   const canCalculateScore = (user && ['Administrator', 'Data Operator'].includes(user.role)) || isHotelManagerOfThisHotel;
   const canEditHotel = (user && ['Administrator'].includes(user.role)) || isHotelManagerOfThisHotel;
@@ -80,7 +87,7 @@ const HotelDetails: React.FC = () => {
             {canEditHotel && (
               <button 
                 className="bg-blue-800 hover:bg-blue-900 text-white px-4 py-2 rounded"
-                onClick={() => navigate(`/dashboard/hotels/edit/${hotel.GlobalPropertyID}`)}
+                onClick={() => navigate(`/hotels/edit/${hotel.GlobalPropertyID}`)}
               >
                 Edit Hotel
               </button>
@@ -116,13 +123,23 @@ const HotelDetails: React.FC = () => {
           {hotel.scoring ? (
             <div>
               <div className="text-center bg-orange-50 p-3 rounded mb-3">
-                <div className="text-2xl font-bold text-orange-700">{hotel.scoring.sparklingScore?.toFixed(2)}</div>
+                <div className="text-2xl font-bold text-orange-700">
+                  {safeToFixed(hotel.scoring.sparklingScore)}
+                </div>
                 <div className="text-sm text-gray-600">Sparkling Score</div>
               </div>
-              <p className="text-sm text-gray-700">Review Component: {hotel.scoring.reviewComponent?.toFixed(2)}</p>
-              <p className="text-sm text-gray-700">Metadata Component: {hotel.scoring.metadataComponent?.toFixed(2)}</p>
-              <p className="text-sm text-gray-700">Total Reviews: {hotel.scoring.totalReviews}</p>
-              <p className="text-xs text-gray-500 mt-2">Last Updated: {new Date(hotel.scoring.lastUpdated).toLocaleDateString()}</p>
+              <p className="text-sm text-gray-700">
+                Review Compo
+                {safeToFixed(hotel.scoring.reviewComponent)}
+              </p>
+              <p className="text-sm text-gray-700">
+                Metadata Compo
+                {safeToFixed(hotel.scoring.metadataComponent)}
+              </p>
+              <p className="text-sm text-gray-700">Total Reviews: {hotel.scoring.totalReviews || 0}</p>
+              <p className="text-xs text-gray-500 mt-2">
+                Last Updated: {hotel.scoring.lastUpdated ? new Date(hotel.scoring.lastUpdated).toLocaleDateString() : 'Unknown'}
+              </p>
             </div>
           ) : (
             <p className="text-gray-600">No scoring data available. Click "Calculate Score" to generate.</p>

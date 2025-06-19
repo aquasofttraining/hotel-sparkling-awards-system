@@ -7,6 +7,13 @@ interface HotelCardProps {
 }
 
 const HotelCard: React.FC<HotelCardProps> = ({ hotel, onClick }) => {
+  // Helper function to safely format numbers
+  const safeToFixed = (value: any, decimals: number = 2): string => {
+    if (!value && value !== 0) return 'N/A';
+    const num = Number(value);
+    return isNaN(num) ? 'N/A' : num.toFixed(decimals);
+  };
+
   return (
     <div 
       className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow p-4 cursor-pointer border"
@@ -38,7 +45,7 @@ const HotelCard: React.FC<HotelCardProps> = ({ hotel, onClick }) => {
         <div className="bg-gradient-to-r from-orange-50 to-blue-50 p-3 rounded text-center">
           <span className="text-sm text-gray-600">Sparkling Score: </span>
           <span className="text-lg font-bold text-orange-700">
-            {hotel.scoring.sparklingScore ? Number(hotel.scoring.sparklingScore).toFixed(2) : 'N/A'}
+            {safeToFixed(hotel.scoring.sparklingScore)}
           </span>
         </div>
       )}
