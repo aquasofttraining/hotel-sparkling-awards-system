@@ -1,7 +1,7 @@
 export interface Review {
   id: number;
   hotelId: number;
-  userId: number; // Assuming a user is associated with a review
+  userId: number; 
   title: string;
   content: string;
   overallRating: number;
