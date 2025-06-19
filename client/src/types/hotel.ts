@@ -30,4 +30,5 @@ export interface HotelFilters {
   search?: string;
   sortBy?: string;
   sortOrder?: 'ASC' | 'DESC';
+  managedByUser?: number; 
 }

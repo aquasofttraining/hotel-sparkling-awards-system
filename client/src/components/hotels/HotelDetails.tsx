@@ -18,27 +18,27 @@ const HotelDetails: React.FC = () => {
 
   const isHotelManagerOfThisHotel = user?.role === 'Hotel Manager' && user.hotelId === hotelId;
   const canCalculateScore = (user && ['Administrator', 'Data Operator'].includes(user.role)) || isHotelManagerOfThisHotel;
-  const canEditHotel = (user && ['Administrator'].includes(user.role)) || isHotelManagerOfThisHotel; // Only Admin or manager of this hotel
-
-  const fetchHotelDetails = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await hotelService.getHotelById(hotelId);
-      setHotel(data);
-    } catch (err: any) {
-      if (err.response?.status === 403) {
-        setError('Access denied to this hotel.');
-      } else {
-        setError('Failed to load hotel details.');
-      }
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const canEditHotel = (user && ['Administrator'].includes(user.role)) || isHotelManagerOfThisHotel;
 
   useEffect(() => {
+    const fetchHotelDetails = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await hotelService.getHotelById(hotelId);
+        setHotel(data);
+      } catch (err: any) {
+        if (err.response?.status === 403) {
+          setError('Access denied to this hotel.');
+        } else {
+          setError('Failed to load hotel details.');
+        }
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchHotelDetails();
   }, [hotelId]);
 
@@ -48,7 +48,6 @@ const HotelDetails: React.FC = () => {
     setCalculatingScore(true);
     try {
       await scoringService.calculateHotelScore(hotelId);
-      await fetchHotelDetails(); // Refresh hotel data to get updated score
       alert('Hotel score calculated/updated successfully!');
     } catch (err) {
       console.error('Failed to calculate hotel score:', err);
@@ -58,60 +57,82 @@ const HotelDetails: React.FC = () => {
     }
   };
 
-  if (loading) return <div className="loading-spinner">Loading hotel details...</div>;
-  if (error) return <div className="error-message">{error}</div>;
-  if (!hotel) return <div className="no-data">Hotel not found.</div>;
+  if (loading) return <div className="flex justify-center items-center min-h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-900"></div></div>;
+  if (error) return <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">{error}</div>;
+  if (!hotel) return <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded">Hotel not found.</div>;
 
   return (
-    <div className="hotel-details-page">
-      <div className="hotel-details-header">
-        <h2>{hotel.GlobalPropertyName}</h2>
-        <div className="hotel-actions">
-          {canCalculateScore && (
-            <button className="btn-secondary" onClick={handleCalculateScore} disabled={calculatingScore}>
-              {calculatingScore ? 'Calculating...' : 'Calculate/Update Score'}
-            </button>
-          )}
-          {canEditHotel && (
-            <button className="btn-secondary" onClick={() => navigate(`/dashboard/hotels/edit/${hotel.GlobalPropertyID}`)}>
-              Edit Hotel
-            </button>
-          )}
+    <div className="max-w-6xl mx-auto p-4">
+      {/* Header */}
+      <div className="bg-white rounded-lg shadow p-6 mb-6">
+        <div className="flex justify-between items-start mb-4">
+          <h1 className="text-3xl font-bold text-blue-900">{hotel.GlobalPropertyName}</h1>
+          <div className="flex gap-2">
+            {canCalculateScore && (
+              <button 
+                className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded disabled:opacity-50"
+                onClick={handleCalculateScore}
+                disabled={calculatingScore}
+              >
+                {calculatingScore ? 'Calculating...' : 'Calculate Score'}
+              </button>
+            )}
+            {canEditHotel && (
+              <button 
+                className="bg-blue-800 hover:bg-blue-900 text-white px-4 py-2 rounded"
+                onClick={() => navigate(`/dashboard/hotels/edit/${hotel.GlobalPropertyID}`)}
+              >
+                Edit Hotel
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
-      <div className="hotel-info-grid">
-        <div className="info-block">
-          <h3>Location</h3>
-          <p>{hotel.PropertyAddress1}, {hotel.PropertyCity}, {hotel.PropertyState} {hotel.PropertyPostalCode}</p>
-          <p>{hotel.PropertyCountry}</p>
-          <p>Phone: {hotel.PropertyPhone}</p>
+      {/* Info Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        {/* Location */}
+        <div className="bg-white rounded-lg shadow p-4">
+          <h3 className="text-lg font-semibold text-blue-900 mb-3">📍 Location</h3>
+          <p className="text-gray-700">{hotel.PropertyAddress1}, {hotel.PropertyCity}, {hotel.PropertyState} {hotel.PropertyPostalCode}</p>
+          <p className="text-gray-700">{hotel.PropertyCountry}</p>
+          <p className="text-gray-700">Phone: {hotel.PropertyPhone}</p>
         </div>
-        <div className="info-block">
-          <h3>Overview</h3>
-          <p>Stars: {'⭐'.repeat(hotel.HotelStars || 0)}</p>
-          <p>Rooms: {hotel.RoomsNumber}</p>
-          <p>Floors: {hotel.FloorsNumber}</p>
-          {hotel.DistanceToTheAirport !== undefined && hotel.DistanceToTheAirport !== null && <p>Airport Distance: {hotel.DistanceToTheAirport} miles</p>}
+
+        {/* Overview */}
+        <div className="bg-white rounded-lg shadow p-4">
+          <h3 className="text-lg font-semibold text-blue-900 mb-3">🏨 Overview</h3>
+          <p className="text-gray-700">Stars: {'⭐'.repeat(hotel.HotelStars || 0)}</p>
+          <p className="text-gray-700">Rooms: {hotel.RoomsNumber}</p>
+          <p className="text-gray-700">Floors: {hotel.FloorsNumber}</p>
+          {hotel.DistanceToTheAirport !== undefined && hotel.DistanceToTheAirport !== null && (
+            <p className="text-gray-700">Airport Distance: {hotel.DistanceToTheAirport} miles</p>
+          )}
         </div>
-        <div className="info-block">
-          <h3>Scoring</h3>
+
+        {/* Scoring */}
+        <div className="bg-white rounded-lg shadow p-4">
+          <h3 className="text-lg font-semibold text-blue-900 mb-3">✨ Scoring</h3>
           {hotel.scoring ? (
-            <>
-              <p>Sparkling Score: <strong>{hotel.scoring.sparklingScore?.toFixed(2)}</strong></p>
-              <p>Review Component: {hotel.scoring.reviewComponent?.toFixed(2)}</p>
-              <p>Metadata Component: {hotel.scoring.metadataComponent?.toFixed(2)}</p>
-              <p>Total Reviews: {hotel.scoring.totalReviews}</p>
-              <p>Last Updated: {new Date(hotel.scoring.lastUpdated).toLocaleDateString()}</p>
-            </>
+            <div>
+              <div className="text-center bg-orange-50 p-3 rounded mb-3">
+                <div className="text-2xl font-bold text-orange-700">{hotel.scoring.sparklingScore?.toFixed(2)}</div>
+                <div className="text-sm text-gray-600">Sparkling Score</div>
+              </div>
+              <p className="text-sm text-gray-700">Review Component: {hotel.scoring.reviewComponent?.toFixed(2)}</p>
+              <p className="text-sm text-gray-700">Metadata Component: {hotel.scoring.metadataComponent?.toFixed(2)}</p>
+              <p className="text-sm text-gray-700">Total Reviews: {hotel.scoring.totalReviews}</p>
+              <p className="text-xs text-gray-500 mt-2">Last Updated: {new Date(hotel.scoring.lastUpdated).toLocaleDateString()}</p>
+            </div>
           ) : (
-            <p>No scoring data available. Click "Calculate/Update Score" to generate.</p>
+            <p className="text-gray-600">No scoring data available. Click "Calculate Score" to generate.</p>
           )}
         </div>
       </div>
 
-      <div className="hotel-reviews-section">
-        <h3>Recent Reviews</h3>
+      {/* Reviews */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <h3 className="text-xl font-semibold text-blue-900 mb-4">📝 Recent Reviews</h3>
         <ReviewList hotelId={hotel.GlobalPropertyID} />
       </div>
     </div>
