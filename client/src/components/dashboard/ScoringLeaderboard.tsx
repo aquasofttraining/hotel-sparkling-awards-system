@@ -118,32 +118,33 @@ const ScoringLeaderboard: React.FC = () => {
                   }`}
                 >
                   <td className="px-6 py-4">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-lg font-bold text-blue-900">#{hotel.ranking}</span>
-                      {hotel.ranking === 1 && <span className="text-2xl">🥇</span>}
-                      {hotel.ranking === 2 && <span className="text-2xl">🥈</span>}
-                      {hotel.ranking === 3 && <span className="text-2xl">🥉</span>}
-                    </div>
+                    <span className="text-lg font-bold text-blue-900">#{hotel.ranking}</span>
                   </td>
                   <td className="px-6 py-4">
                     <span className="font-semibold text-blue-900">{hotel.hotelName}</span>
                   </td>
                   <td className="px-6 py-4">
                     <span className="text-lg font-bold text-orange-700">
-                      {hotel.sparklingScore?.toFixed(2)}
+                      {hotel.sparklingScore && typeof hotel.sparklingScore === 'number' 
+                        ? hotel.sparklingScore.toFixed(2) 
+                        : 'N/A'}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-gray-700">
-                    {hotel.reviewComponent?.toFixed(2)}
+                    {hotel.reviewComponent && typeof hotel.reviewComponent === 'number' 
+                      ? hotel.reviewComponent.toFixed(2) 
+                      : 'N/A'}
                   </td>
                   <td className="px-6 py-4 text-gray-700">
-                    {hotel.metadataComponent?.toFixed(2)}
+                    {hotel.metadataComponent && typeof hotel.metadataComponent === 'number' 
+                      ? hotel.metadataComponent.toFixed(2) 
+                      : 'N/A'}
                   </td>
                   <td className="px-6 py-4">
-                    <span className="text-lg">{'⭐'.repeat(hotel.hotelStars || 0)}</span>
+                    <span className="text-lg">{hotel.hotelStars || 'N/A'}</span>
                   </td>
                   <td className="px-6 py-4 text-gray-700">
-                    {hotel.totalReviews}
+                    {hotel.totalReviews || 'N/A'}
                   </td>
                 </tr>
               ))}
