@@ -7,7 +7,6 @@ interface HotelCardProps {
 }
 
 const HotelCard: React.FC<HotelCardProps> = ({ hotel, onClick }) => {
-  // Helper function to safely format numbers
   const safeToFixed = (value: any, decimals: number = 2): string => {
     if (!value && value !== 0) return 'N/A';
     const num = Number(value);
@@ -16,36 +15,32 @@ const HotelCard: React.FC<HotelCardProps> = ({ hotel, onClick }) => {
 
   return (
     <div 
-      className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow p-4 cursor-pointer border"
+      className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer"
       onClick={() => onClick?.(hotel.GlobalPropertyID)}
     >
-      <h3 className="text-lg font-semibold text-blue-900 mb-2">
+      <h3 className="text-lg font-semibold text-gray-800 mb-2">
         {hotel.GlobalPropertyName}
       </h3>
-      
-      <p className="text-gray-600 text-sm mb-3">
-        {hotel.PropertyAddress1}, {hotel.PropertyCity}
+      <p className="text-gray-600 mb-2">
+        {hotel.PropertyAddress1}
       </p>
-      
-      <div className="flex flex-wrap gap-2 mb-3">
-        <span className="bg-orange-100 text-orange-800 px-2 py-1 rounded text-xs">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-yellow-500">
           Stars: {'⭐'.repeat(hotel.HotelStars || 0)}
         </span>
-        <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
+        <span className="text-gray-600">
           Rooms: {hotel.RoomsNumber}
         </span>
-        {hotel.DistanceToTheAirport && (
-          <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs">
-            Airport: {hotel.DistanceToTheAirport} miles
-          </span>
-        )}
       </div>
-      
+      {hotel.DistanceToTheAirport && (
+        <p className="text-gray-600 mb-2">
+          Airport: {hotel.DistanceToTheAirport} miles
+        </p>
+      )}
       {hotel.scoring && (
-        <div className="bg-gradient-to-r from-orange-50 to-blue-50 p-3 rounded text-center">
-          <span className="text-sm text-gray-600">Sparkling Score: </span>
-          <span className="text-lg font-bold text-orange-700">
-            {safeToFixed(hotel.scoring.sparklingScore)}
+        <div className="bg-orange-50 p-2 rounded">
+          <span className="text-orange-700 font-semibold">
+            Sparkling Score: {safeToFixed(hotel.scoring.sparkling_score)}
           </span>
         </div>
       )}

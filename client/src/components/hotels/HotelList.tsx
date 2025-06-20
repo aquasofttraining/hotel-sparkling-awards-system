@@ -28,25 +28,25 @@ const HotelList: React.FC<HotelListProps> = ({ onlyManagedByUser = false, search
     setFilters(prev => ({ ...prev, search: searchTerm, page: 1 }));
   };
 
-  const canAddHotel = user && ['Administrator', 'Data Operator'].includes(user.role);
+  const canAddHotel = user && ['Administrator', 'administrator',  'Data Operator' ,'data operator'].includes(user.role);
 
-  if (loading) return <div className="flex justify-center py-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-900"></div></div>;
-  if (error) return <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">{error}</div>;
+  if (loading) return <div className="text-center py-8">Loading hotels...</div>;
+  if (error) return <div className="text-red-600 text-center py-8">{error}</div>;
 
   return (
-    <div>
+    <div className="max-w-6xl mx-auto p-6">
       {searchMode && (
-        <form onSubmit={handleSearchSubmit} className="mb-6 flex gap-2">
+        <form onSubmit={handleSearchSubmit} className="mb-6 flex gap-4">
           <input
             type="text"
-            placeholder="Search hotels by name..."
+            placeholder="Search hotels..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="flex-1 px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-orange-500"
           />
-          <button 
+          <button
             type="submit"
-            className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-2 rounded"
+            className="px-6 py-2 bg-orange-600 text-white rounded hover:bg-orange-700"
           >
             Search
           </button>
@@ -54,43 +54,41 @@ const HotelList: React.FC<HotelListProps> = ({ onlyManagedByUser = false, search
       )}
 
       {!searchMode && !onlyManagedByUser && canAddHotel && (
-        <div className="mb-4">
-          <button 
-            className="bg-blue-800 hover:bg-blue-900 text-white px-4 py-2 rounded"
+        <div className="mb-6 text-right">
+          <button
             onClick={() => navigate('/hotels/add')}
+            className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700"
           >
             Add New Hotel
           </button>
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-6">
-        {hotels.length === 0 ? (
-          <div className="col-span-full text-center py-8">
-            <p className="text-gray-600">
-              {onlyManagedByUser ? 'No managed hotels found.' : 'No hotels found.'}
-            </p>
-          </div>
-        ) : (
-          hotels.map(hotel => (
+      {hotels.length === 0 ? (
+        <div className="text-center py-12 text-gray-500">
+          {onlyManagedByUser ? 'No managed hotels found.' : 'No hotels found.'}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {hotels.map(hotel => (
             <HotelCard
               key={hotel.GlobalPropertyID}
               hotel={hotel}
-              onClick={() => navigate(`/hotels/${hotel.GlobalPropertyID}`)}
+              onClick={(hotelId) => navigate(`/hotels/${hotelId}`)}
             />
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      )}
 
       {pagination.totalPages > 1 && (
-        <div className="flex justify-center gap-2">
+        <div className="flex justify-center mt-8 space-x-2">
           {Array.from({ length: pagination.totalPages }, (_, i) => (
             <button
               key={i + 1}
               onClick={() => handlePageChange(i + 1)}
               className={`px-3 py-2 rounded ${
                 pagination.page === i + 1
-                  ? 'bg-blue-800 text-white'
+                  ? 'bg-blue-600 text-white'
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
               }`}
             >

@@ -54,6 +54,7 @@ Hotel.init({
   GlobalPropertyID: {
   type: DataTypes.INTEGER,
   primaryKey: true,
+  autoIncrement: true,
   field: 'globalpropertyid', // 👈 Asta lipsea
   },
 

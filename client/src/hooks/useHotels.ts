@@ -6,8 +6,13 @@ export const useHotels = (initialFilters: HotelFilters = {}) => {
   const [hotels, setHotels] = useState<Hotel[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [pagination, setPagination] = useState({ total: 0, page: 1, limit: 10, totalPages: 0 });
-  const [filters, setFilters] = useState<HotelFilters>(initialFilters);
+  const [pagination, setPagination] = useState({ 
+    total: 0, 
+    page: 1, 
+    limit: 10, 
+    totalPages: 0 
+  });
+  const [filters, setFilters] = useState(initialFilters);
 
   const fetchHotels = useCallback(async () => {
     setLoading(true);
@@ -15,7 +20,9 @@ export const useHotels = (initialFilters: HotelFilters = {}) => {
     try {
       const response = await hotelService.getHotels(filters);
       setHotels(response.data);
-      setPagination(response.pagination);
+      if (response.pagination) {
+        setPagination(response.pagination);
+      }
     } catch (err) {
       setError('Failed to fetch hotels.');
       console.error(err);
@@ -28,5 +35,13 @@ export const useHotels = (initialFilters: HotelFilters = {}) => {
     fetchHotels();
   }, [fetchHotels]);
 
-  return { hotels, loading, error, pagination, filters, setFilters, refreshHotels: fetchHotels };
+  return { 
+    hotels, 
+    loading, 
+    error, 
+    pagination, 
+    filters, 
+    setFilters, 
+    refreshHotels: fetchHotels 
+  };
 };

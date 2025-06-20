@@ -1,24 +1,23 @@
 export interface HotelScoring {
-  id: number;
   ranking: number;
-  hotelId: number;
-  hotelName: string;
-  location: string;
-  sparklingScore: number;
-  reviewComponent: number;
-  metadataComponent: number;
-  totalReviews: number;
-  hotelStars: number;
-  distanceToAirport: number;
-  roomsNumber: number;
-  amenitiesRate: number;
-  cleanlinessRate: number;
-  foodBeverage: number;
-  sleepQuality: number;
-  internetQuality: number;
-  lastUpdated: string;
-  createdAt: string;
-  updatedAt: string;
+  hotel_id: number;
+  hotel_name: string;
+  location?: string;
+  sparkling_score: number;
+  review_component: number;
+  metadata_component: number;
+  sentiment_score?: number;
+  total_reviews: number;
+  hotel_stars: number;
+  distance_to_airport?: number;
+  floors_number?: number;
+  rooms_number?: number;
+  amenities_rate?: number;
+  cleanliness_rate?: number;
+  food_beverage?: number;
+  sleep_quality?: number;
+  internet_quality?: number;
+  last_updated?: string;
 }
 
 export interface ScoringFilters {
@@ -26,4 +25,15 @@ export interface ScoringFilters {
   limit?: number;
   sortBy?: string;
   sortOrder?: 'ASC' | 'DESC';
+}
+
+export interface ScoringResponse {
+  success: boolean;
+  data: HotelScoring[];
+  pagination?: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
 }

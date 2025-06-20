@@ -1,8 +1,8 @@
+import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import './Navigation.css';
 
-const Navigation = () => {
+const Navigation: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -14,34 +14,66 @@ const Navigation = () => {
   if (!user) return null;
 
   return (
-    <nav className="navigation">
-      <ul>
-        <li><Link to="/dashboard">Dashboard</Link></li>
-        <li><Link to="/explore-hotels">Explore Hotels</Link></li>
-        <li><Link to="/scoring-leaderboard">Rankings</Link></li>
-        <li><Link to="/profile">Profile</Link></li>
+    <nav className="bg-blue-800 text-white shadow-lg">
+      <div className="max-w-7xl mx-auto px-4">
+        <div className="flex justify-between items-center h-16">
+          <div className="flex items-center space-x-8">
+            <Link to="/dashboard" className="text-xl font-bold">
+              Hotel Awards
+            </Link>
+            
+            <div className="flex space-x-4">
+              <Link to="/dashboard" className="hover:text-blue-200">
+                Dashboard
+              </Link>
+              <Link to="/explore-hotels" className="hover:text-blue-200">
+                Explore Hotels
+              </Link>
+              <Link to="/scoring-leaderboard" className="hover:text-blue-200">
+                Rankings
+              </Link>
+              <Link to="/profile" className="hover:text-blue-200">
+                Profile
+              </Link>
 
-        {user.roleId === 3 && (
-          <>
-            <li><Link to="/users">Users</Link></li>
-            <li><Link to="/hotels/add">Add Hotel</Link></li>
-          </>
-        )}
+              {user.roleId === 3 && (
+                <>
+                  <Link to="/users" className="hover:text-blue-200">
+                    Users
+                  </Link>
+                  <Link to="/hotels/add" className="hover:text-blue-200">
+                    Add Hotel
+                  </Link>
+                </>
+              )}
 
-        {user.roleId === 1 && (
-          <>
-            <li><Link to={`/hotels/${user.hotelId || 'my-hotel'}`}>My Hotel</Link></li>
-          </>
-        )}
+              {user.roleId === 1 && (
+                <Link to="/my-hotels" className="hover:text-blue-200">
+                  My Hotels
+                </Link>
+              )}
 
-        {user.roleId === 4 && (
-          <>
-            <li><Link to="/hotels/add">Add Hotel</Link></li>
-          </>
-        )}
+              {user.roleId === 4 && (
+                <Link to="/hotels/add" className="hover:text-blue-200">
+                  Add Hotel
+                </Link>
+              )}
+            </div>
+          </div>
 
-        <li><button onClick={handleLogout}>Logout</button></li>
-      </ul>
+          <div className="flex items-center space-x-4">
+            <span className="text-sm">
+              {user.username} ({user.role})
+            </span>
+            <button
+              onClick={handleLogout}
+              className="bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-sm"
+            >
+              Logout
+            </button>
+          </div>
+        </div>
+      </div>
     </nav>
   );
 };

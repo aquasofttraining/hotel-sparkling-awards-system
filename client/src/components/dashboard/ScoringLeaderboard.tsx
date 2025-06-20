@@ -7,11 +7,12 @@ const ScoringLeaderboard: React.FC = () => {
   const { scoringData, loading, error, filters, setFilters, refreshScoring } = useScoring();
   const [recalculating, setRecalculating] = React.useState(false);
   const user = authService.getCurrentUser();
+  
   const canRecalculate = user && ['Administrator', 'Data Operator'].includes(user.role);
 
   const handleRecalculate = async () => {
-    if (!recalculating) return;
-
+    if (recalculating) return;
+    
     setRecalculating(true);
     try {
       await scoringService.recalculateAllScores();
@@ -25,126 +26,111 @@ const ScoringLeaderboard: React.FC = () => {
     }
   };
 
+  const safeToFixed = (value: any, decimals: number = 2): string => {
+    if (!value && value !== 0) return 'N/A';
+    const num = Number(value);
+    return isNaN(num) ? 'N/A' : num.toFixed(decimals);
+  };
+
   if (loading) return (
-    <div className="flex justify-center items-center min-h-64">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-900"></div>
+    <div className="flex justify-center items-center py-8">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mr-4"></div>
+      <span>Loading rankings...</span>
     </div>
   );
 
   if (error) return (
-    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-      {error}
-    </div>
+    <div className="text-red-600 text-center py-8">{error}</div>
   );
 
   return (
     <div className="max-w-7xl mx-auto p-6">
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-8 gap-4">
-        <h2 className="text-3xl font-bold text-blue-900 flex items-center">
-          <span className="mr-3">🏆</span>
-          Hotel Sparkling Awards Leaderboard
-        </h2>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold text-gray-800">Hotel Sparkling Awards Leaderboard</h1>
         
         {canRecalculate && (
           <button
-            className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-lg font-medium transition-colors disabled:opacity-50 flex items-center"
             onClick={handleRecalculate}
             disabled={recalculating}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded disabled:opacity-50"
           >
-            {recalculating ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                Calculating...
-              </>
-            ) : (
-              'Recalculate All Scores'
-            )}
+            {recalculating ? 'Recalculating...' : 'Recalculate All Scores'}
           </button>
         )}
       </div>
 
-      {/* Controls */}
-      <div className="flex flex-wrap gap-4 mb-6">
-        <div className="flex flex-col">
-          <label className="text-sm font-medium text-gray-700 mb-1">Sort by:</label>
-          <select
-            value={filters.sortBy || 'sparklingScore'}
-            onChange={(e) => setFilters(prev => ({ ...prev, sortBy: e.target.value as any }))}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-          >
-            <option value="sparklingScore">Sparkling Score</option>
-            <option value="totalReviews">Total Reviews</option>
-            <option value="hotelName">Hotel Name</option>
-          </select>
-        </div>
-
-        <div className="flex flex-col">
-          <label className="text-sm font-medium text-gray-700 mb-1">Order:</label>
-          <select
-            value={filters.sortOrder || 'DESC'}
-            onChange={(e) => setFilters(prev => ({ ...prev, sortOrder: e.target.value as any }))}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-          >
-            <option value="DESC">High to Low</option>
-            <option value="ASC">Low to High</option>
-          </select>
-        </div>
-      </div>
-
-      {/* Leaderboard Table */}
-      <div className="bg-white rounded-xl shadow-lg border border-orange-200 overflow-hidden">
+      <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gradient-to-r from-orange-100 to-blue-100">
               <tr>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-blue-900">Rank</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-blue-900">Hotel</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-blue-900">Sparkling Score</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-blue-900">Review Score</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-blue-900">Metadata Score</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-blue-900">Stars</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-blue-900">Reviews</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Rank
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Hotel
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Sparkling Score
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Review Score
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Metadata Score
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Stars
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Reviews
+                </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
-              {scoringData.map((hotel, index) => (
+            <tbody className="bg-white divide-y divide-gray-200">
+              {scoringData?.map((hotel, index) => (
                 <tr 
-                  key={hotel.hotelId}
-                  className={`hover:bg-blue-50 transition-colors ${
+                  key={hotel.hotel_id || index}
+                  className={`hover:bg-gray-50 ${
                     hotel.ranking === 1 ? 'bg-yellow-50' :
                     hotel.ranking === 2 ? 'bg-gray-50' :
                     hotel.ranking === 3 ? 'bg-orange-50' : ''
                   }`}
                 >
-                  <td className="px-6 py-4">
-                    <span className="text-lg font-bold text-blue-900">#{hotel.ranking}</span>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    <div className="flex items-center">
+                      <span className="text-lg font-bold">#{hotel.ranking}</span>
+                      {hotel.ranking === 1 && <span className="ml-2 text-2xl">🥇</span>}
+                      {hotel.ranking === 2 && <span className="ml-2 text-2xl">🥈</span>}
+                      {hotel.ranking === 3 && <span className="ml-2 text-2xl">🥉</span>}
+                    </div>
                   </td>
-                  <td className="px-6 py-4">
-                    <span className="font-semibold text-blue-900">{hotel.hotelName}</span>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900">
+                      {hotel.hotel_name || 'Unknown Hotel'}
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      ID: {hotel.hotel_id}
+                    </div>
                   </td>
-                  <td className="px-6 py-4">
-                    <span className="text-lg font-bold text-orange-700">
-                      {hotel.sparklingScore && typeof hotel.sparklingScore === 'number' 
-                        ? hotel.sparklingScore.toFixed(2) 
-                        : 'N/A'}
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className="text-lg font-bold text-orange-600">
+                      {safeToFixed(hotel.sparkling_score)}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-gray-700">
-                    {hotel.reviewComponent && typeof hotel.reviewComponent === 'number' 
-                      ? hotel.reviewComponent.toFixed(2) 
-                      : 'N/A'}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {safeToFixed(hotel.review_component)}
                   </td>
-                  <td className="px-6 py-4 text-gray-700">
-                    {hotel.metadataComponent && typeof hotel.metadataComponent === 'number' 
-                      ? hotel.metadataComponent.toFixed(2) 
-                      : 'N/A'}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {safeToFixed(hotel.metadata_component)}
                   </td>
-                  <td className="px-6 py-4">
-                    <span className="text-lg">{hotel.hotelStars || 'N/A'}</span>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <span className="text-yellow-500">
+                      {'⭐'.repeat(hotel.hotel_stars || 0)}
+                    </span>
                   </td>
-                  <td className="px-6 py-4 text-gray-700">
-                    {hotel.totalReviews || 'N/A'}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {hotel.total_reviews || 0}
                   </td>
                 </tr>
               ))}
@@ -152,6 +138,14 @@ const ScoringLeaderboard: React.FC = () => {
           </table>
         </div>
       </div>
+
+      {(!scoringData || scoringData.length === 0) && !loading && (
+        <div className="text-center py-12">
+          <div className="text-6xl mb-4">🏨</div>
+          <h3 className="text-xl font-semibold text-gray-600 mb-2">No Hotels Found</h3>
+          <p className="text-gray-500">No scoring data available to display rankings.</p>
+        </div>
+      )}
     </div>
   );
 };

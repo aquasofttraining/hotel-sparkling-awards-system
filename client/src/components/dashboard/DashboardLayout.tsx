@@ -1,9 +1,17 @@
+import React from 'react';
 import Navigation from '../common/Navigation';
 
-const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
+interface DashboardLayoutProps {
+  children: React.ReactNode;
+}
+
+const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   return (
-    <div className="min-h-screen flex flex-col">
-      <main className="flex-1 p-4 bg-gray-100">{children}</main>
+    <div className="min-h-screen bg-gray-100">
+      <Navigation />
+      <main className="container mx-auto px-4 py-8">
+        {children}
+      </main>
     </div>
   );
 };

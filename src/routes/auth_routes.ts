@@ -1,13 +1,11 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import AuthController from '../controllers/AuthController';
+import { authenticateToken } from '../middleware/auth';
 
 const router = Router();
 
-/**
- * @route   POST /api/auth/login
- * @desc    Authenticate user and return a JWT token
- * @access  Public
- */
-router.post('/login', AuthController.login);
+router.post('/login', (req: Request, res: Response) => AuthController.login(req, res));
+router.post('/logout', (req: Request, res: Response) => AuthController.logout(req, res));
+router.get('/profile', authenticateToken, (req: Request, res: Response) => AuthController.getProfile(req, res));
 
-export default router;
+module.exports = router;

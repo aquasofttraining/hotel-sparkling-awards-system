@@ -1,17 +1,18 @@
-import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import { Request, Response, NextFunction } from 'express';
 
-interface AuthenticatedRequest extends Request {
+export interface AuthRequest extends Request {
   user?: {
     userId: number;
     roleId: number;
-    role?: string;       // ✅ adăugat
-    email?: string;      // ✅ adăugat
-    username?: string;   // ✅ adăugat dacă vrei
+    role?: string;
+    email?: string;
+    username?: string;
+    hotelId?: number | null;
   };
 }
 
-export const authenticateToken = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
+export const authenticateToken = (req: AuthRequest, res: Response, next: NextFunction): void => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
@@ -20,25 +21,52 @@ export const authenticateToken = (req: AuthenticatedRequest, res: Response, next
     return;
   }
 
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as any;
-    req.user = decoded;
+  jwt.verify(token, process.env.JWT_SECRET!, (err: any, decoded: any) => {
+    if (err) {
+      res.status(403).json({ success: false, message: 'Invalid or expired token' });
+      return;
+    }
+
+    req.user = {
+      userId: decoded.userId || decoded.id,
+      roleId: Number(decoded.roleId || decoded.role_id),
+      role: decoded.role,
+      email: decoded.email,
+      username: decoded.username,
+      hotelId: decoded.hotelId || null
+    };
+    
     next();
-  } catch (err) {
-    res.status(403).json({ success: false, message: 'Invalid or expired token' });
-    return;
-  }
+  });
 };
 
 export const requireRole = (allowedRoles: string[]) => {
-  return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
-    if (!req.user) {
+  return (req: AuthRequest, res: Response, next: NextFunction): void => {
+    const user = req.user;
+    
+    if (!user) {
       res.status(401).json({ success: false, message: 'Authentication required' });
       return;
     }
 
-    if (!req.user.role || !allowedRoles.includes(req.user.role)) {
-      res.status(403).json({ success: false, message: 'Insufficient permissions' });
+    const ROLE_MAPPING: { [key: number]: string } = {
+      1: 'Hotel Manager',
+      2: 'Traveler',
+      3: 'Administrator',
+      4: 'Data Operator'
+    };
+
+    let userRole = user.role;
+    
+    if (!userRole && user.roleId) {
+      userRole = ROLE_MAPPING[user.roleId];
+    }
+
+    if (!userRole || !allowedRoles.includes(userRole)) {
+      res.status(403).json({
+        success: false,
+        message: 'Insufficient permissions'
+      });
       return;
     }
 

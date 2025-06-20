@@ -26,7 +26,7 @@ class ScoringController {
 
   public async getHotelScoring(req: Request, res: Response): Promise<void> {
     try {
-      const { limit = 20, page = 1, sortBy = 'sparklingScore', sortOrder = 'DESC' } = req.query;
+      const { limit = 30, page = 1, sortBy = 'sparklingScore', sortOrder = 'DESC' } = req.query;
       const offset = (Number(page) - 1) * Number(limit);
 
       const { count, rows: scoring } = await HotelScoring.findAndCountAll({

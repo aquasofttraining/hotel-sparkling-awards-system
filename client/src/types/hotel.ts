@@ -5,21 +5,17 @@ export interface Hotel {
   GlobalPropertyID: number;
   GlobalPropertyName: string;
   PropertyAddress1: string;
-  PropertyCity: string;
-  PropertyState: string;
-  PropertyPostalCode: string;
-  PropertyCountry: string;
-  PropertyPhone: string;
-  PropertyFax: string;
-  PropertyLatitude: number;
-  PropertyLongitude: number;
+  CityID?: number;
+  PropertyStateProvinceID?: number;
+  PropertyLatitude?: number;
+  PropertyLongitude?: number;
+  SabrePropertyRating?: number;
   HotelStars: number;
-  RoomsNumber: number;
-  FloorsNumber: number;
-  DistanceToTheAirport: number;
-  lastUpdated: string;
-  createdAt: string;
-  updatedAt: string;
+  DistanceToTheAirport?: number;
+  FloorsNumber?: number;
+  RoomsNumber?: number;
+  sparkling_score?: number;
+  last_updated?: string;
   scoring?: HotelScoring;
   reviews?: Review[];
 }
@@ -30,5 +26,14 @@ export interface HotelFilters {
   search?: string;
   sortBy?: string;
   sortOrder?: 'ASC' | 'DESC';
-  managedByUser?: number; 
+  managedByUser?: number;
+}
+
+export interface CreateHotelRequest {
+  GlobalPropertyName: string;
+  PropertyAddress1: string;
+  HotelStars: number;
+  RoomsNumber?: number;
+  FloorsNumber?: number;
+  DistanceToTheAirport?: number;
 }

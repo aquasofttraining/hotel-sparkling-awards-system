@@ -2,12 +2,14 @@ import { useState, useEffect, useCallback } from 'react';
 import { reviewService } from '../services/reviewService';
 import { Review } from '../types/review';
 
-export const useReviews = (hotelId: number) => {
+export const useReviews = (hotelId?: number) => {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchReviews = useCallback(async () => {
+    if (!hotelId) return;
+    
     setLoading(true);
     setError(null);
     try {
@@ -27,5 +29,10 @@ export const useReviews = (hotelId: number) => {
     }
   }, [hotelId, fetchReviews]);
 
-  return { reviews, loading, error, refreshReviews: fetchReviews };
+  return { 
+    reviews, 
+    loading, 
+    error, 
+    refreshReviews: fetchReviews 
+  };
 };

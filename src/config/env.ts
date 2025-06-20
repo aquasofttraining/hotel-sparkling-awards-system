@@ -1,50 +1,57 @@
 import dotenv from 'dotenv';
-
 dotenv.config();
 
-export const envConfig = {
-  // Server Configuration
-  NODE_ENV: process.env.NODE_ENV || 'development',
-  PORT: parseInt(process.env.PORT || '3000'),
-  HOST: process.env.HOST || 'localhost',
+interface DatabaseConfig {
+  database: string;
+  username: string;
+  password: string;
+  host: string;
+  port: number;
+  dialect: 'postgres';
+  logging: boolean;
+  pool: {
+    max: number;
+    min: number;
+    acquire: number;
+    idle: number;
+  };
+  dialectOptions: any;
+}
 
-  // Database Configuration
-  DB_NAME: process.env.DB_NAME || 'hotel_sparkling_awards_system',
-  DB_USER: process.env.DB_USER || 'postgres',
-  DB_PASSWORD: process.env.DB_PASSWORD || '',
-  DB_HOST: process.env.DB_HOST || 'localhost',
-  DB_PORT: parseInt(process.env.DB_PORT || '5432'),
+interface EnvConfig {
+  port: number;
+  jwtSecret: string;
+  nodeEnv: string;
+  isProduction: boolean;
+  isDevelopment: boolean;
+  database: DatabaseConfig;
+}
 
-  // Authentication
-  JWT_SECRET: process.env.JWT_SECRET || 'change-this-in-production',
-  JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '24h',
-  BCRYPT_SALT_ROUNDS: parseInt(process.env.BCRYPT_SALT_ROUNDS || '10'),
-
-  // API Configuration
-  API_VERSION: process.env.API_VERSION || 'v1',
-  API_PREFIX: process.env.API_PREFIX || '/api',
-
-  // Rate Limiting
-  RATE_LIMIT_WINDOW: parseInt(process.env.RATE_LIMIT_WINDOW || '900000'), // 15 minutes
-  RATE_LIMIT_MAX: parseInt(process.env.RATE_LIMIT_MAX || '100'),
-
-  // Logging
-  LOG_LEVEL: process.env.LOG_LEVEL || 'info',
-  LOG_FORMAT: process.env.LOG_FORMAT || 'combined',
-
-  // Development flags
-  isDevelopment: process.env.NODE_ENV === 'development',
+const envConfig: EnvConfig = {
+  port: parseInt(process.env.PORT || '3000', 10),
+  jwtSecret: process.env.JWT_SECRET || 'your-super-secret-jwt-key',
+  nodeEnv: process.env.NODE_ENV || 'development',
   isProduction: process.env.NODE_ENV === 'production',
-  isTest: process.env.NODE_ENV === 'test'
+  isDevelopment: process.env.NODE_ENV === 'development',
+  
+  database: {
+    database: process.env.DB_NAME || 'hotel_sparkling_awards_system',
+    username: process.env.DB_USER || 'postgres',
+    password: process.env.DB_PASSWORD || '',
+    host: process.env.DB_HOST || 'localhost',
+    port: parseInt(process.env.DB_PORT || '5432', 10),
+    dialect: 'postgres',
+    logging: process.env.NODE_ENV === 'development',
+    pool: {
+      max: 5,
+      min: 0,
+      acquire: 30000,
+      idle: 10000,
+    },
+    dialectOptions: process.env.NODE_ENV === 'production' 
+      ? { ssl: { require: true, rejectUnauthorized: false } }
+      : {}
+  }
 };
 
-// Validate required environment variables
-const requiredEnvVars = ['DB_NAME', 'DB_USER', 'JWT_SECRET'];
-
-if (envConfig.isProduction) {
-  requiredEnvVars.forEach((envVar) => {
-    if (!process.env[envVar]) {
-      throw new Error(`Required environment variable ${envVar} is not set`);
-    }
-  });
-}
+export default envConfig;

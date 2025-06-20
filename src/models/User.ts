@@ -17,6 +17,7 @@ interface UserAttributes {
   lastName?: string;
   nationality?: string;
   roleId?: number;
+  hotelId: number | null; // Optional, if user is a hotel manager
   accountStatus?: string;
   emailVerified: boolean;
   reviewCount: number;
@@ -34,6 +35,7 @@ class User extends Model<UserAttributes, UserCreationAttributes> implements User
   public lastName?: string;
   public nationality?: string;
   public roleId?: number;
+  public hotelId!: number | null;
   public accountStatus?: string;
   public emailVerified!: boolean;
   public reviewCount!: number;
@@ -99,6 +101,11 @@ User.init(
         model: 'roles',
         key: 'id'
       }
+    },
+    hotelId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      field: 'hotel_id', // Maps to hotel_id column
     },
     accountStatus: {
       type: DataTypes.STRING(50),
