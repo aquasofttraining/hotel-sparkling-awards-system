@@ -2,18 +2,8 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { User, Role } from '../models';
+import { AuthenticatedRequest } from 'types/AuthenticatedRequest';
 
-
-interface AuthenticatedRequest extends Request {
-  user?: {
-    userId: number;
-    roleId: number;
-    role: string;
-    email: string;
-    username: string;
-    hotelId?: number | null;
-  };
-}
 
 interface LoginRequestBody {
   email: string;
