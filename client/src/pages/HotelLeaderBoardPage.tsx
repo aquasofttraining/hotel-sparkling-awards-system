@@ -260,13 +260,13 @@ const HotelLeaderboardPage: React.FC = () => {
         <h3 className="font-semibold text-blue-900 mb-2">Scoring Methodology</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <div>
-            <strong className="text-blue-800">Review Component (60% weight):</strong>
+            <strong className="text-blue-800">Review Component (70% weight):</strong>
             <div className="text-gray-700 mt-1">
               Amenities • Cleanliness • Food & Beverage • Sleep Quality • Internet Quality
             </div>
           </div>
           <div>
-            <strong className="text-blue-800">Metadata Component (40% weight):</strong>
+            <strong className="text-blue-800">Metadata Component (30% weight):</strong>
             <div className="text-gray-700 mt-1">
               Distance to Airport • Hotel Star Rating • Number of Rooms • Number of Floors
             </div>

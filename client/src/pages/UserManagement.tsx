@@ -21,6 +21,7 @@ const UserManagement: React.FC = () => {
   // Pagination and filtering
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
+  const [totalUsers, setTotalUsers] = useState<number>(0);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [roleFilter, setRoleFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
@@ -42,16 +43,33 @@ const UserManagement: React.FC = () => {
     hotelIds: [] as number[]
   });
 
-  // Fetch data function
+  // ✅ Calculate isAdministrator outside useCallback to avoid dependency issues
+  const isAdministrator = user && (
+    user.role === 'Administrator' || 
+    user.roleId === 3 ||
+    user.role === 'administrator'
+  );
+
+  // Debug logging
+  console.log('🔍 UserManagement Debug:', {
+    user: user,
+    userRole: user?.role,
+    userRoleId: user?.roleId,
+    isAdmin: isAdministrator
+  });
+
+  // ✅ Fixed fetchData function with proper dependencies
   const fetchData = useCallback(async (): Promise<void> => {
     try {
       setLoading(true);
       setError(null);
 
-      if (!user || user.role !== 'Administrator') {
+      if (!user || !isAdministrator) {
         setLoading(false);
         return;
       }
+
+      console.log('🔍 Fetching user management data...');
 
       const [usersResponse, rolesResponse, hotelsResponse] = await Promise.all([
         userManagementService.getUsers({
@@ -65,9 +83,16 @@ const UserManagement: React.FC = () => {
         userManagementService.getHotels()
       ]);
 
+      console.log('🔍 API Responses:', {
+        users: usersResponse,
+        roles: rolesResponse,
+        hotels: hotelsResponse
+      });
+
       if (usersResponse?.data) {
         setUsers(usersResponse.data.users || []);
         setTotalPages(usersResponse.data.pagination?.totalPages || 1);
+        setTotalUsers(usersResponse.data.pagination?.total || 0);
       }
       
       if (rolesResponse?.data) {
@@ -79,17 +104,19 @@ const UserManagement: React.FC = () => {
       }
 
     } catch (err) {
-      console.error('Fetch error:', err);
+      console.error('❌ Fetch error:', err);
       setError('Failed to fetch data. Please try again.');
     } finally {
       setLoading(false);
     }
-  }, [user, currentPage, searchTerm, roleFilter, statusFilter]);
+  }, [user, isAdministrator, currentPage, searchTerm, roleFilter, statusFilter]);
 
   // UseEffect hook - MUST BE BEFORE ANY CONDITIONAL RETURNS
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (user && isAdministrator) {
+      fetchData();
+    }
+  }, [fetchData, user, isAdministrator]);
 
   // Clear messages after 5 seconds
   useEffect(() => {
@@ -144,7 +171,7 @@ const UserManagement: React.FC = () => {
         setSuccess('User deactivated successfully');
         await fetchData();
       } catch (err) {
-        console.error('Delete error:', err);
+        console.error('❌ Delete error:', err);
         setError('Failed to delete user. Please try again.');
       }
     }
@@ -165,7 +192,7 @@ const UserManagement: React.FC = () => {
     });
   };
 
-  const handleFormSubmit = async (e: React.FormEvent): Promise<void> => {
+  const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     setModalLoading(true);
     setError(null);
@@ -248,12 +275,21 @@ const UserManagement: React.FC = () => {
   const isHotelManager = roles.find(r => r.id === Number(formData.roleId))?.role === 'Hotel Manager';
 
   // Conditional returns AFTER all hooks
-  if (!user || user.role !== 'Administrator') {
+  if (!user || !isAdministrator) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-red-600 mb-4">Access Denied</h1>
           <p className="text-gray-600">You don't have permission to access this page.</p>
+          <div className="mt-4 p-4 bg-gray-100 rounded text-sm text-left max-w-md">
+            <strong>Debug Info:</strong>
+            <pre className="text-xs mt-2">{JSON.stringify({ 
+              hasUser: !!user, 
+              role: user?.role, 
+              roleId: user?.roleId,
+              isAdmin: isAdministrator 
+            }, null, 2)}</pre>
+          </div>
         </div>
       </div>
     );
@@ -300,7 +336,7 @@ const UserManagement: React.FC = () => {
                 type="text"
                 placeholder="Search users..."
                 value={searchTerm}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -310,7 +346,7 @@ const UserManagement: React.FC = () => {
               </label>
               <select
                 value={roleFilter}
-                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setRoleFilter(e.target.value)}
+                onChange={(e) => setRoleFilter(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">All Roles</option>
@@ -327,7 +363,7 @@ const UserManagement: React.FC = () => {
               </label>
               <select
                 value={statusFilter}
-                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setStatusFilter(e.target.value)}
+                onChange={(e) => setStatusFilter(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">All Status</option>
@@ -463,7 +499,7 @@ const UserManagement: React.FC = () => {
         <div className="px-6 py-4 border-t border-gray-200">
           <div className="flex justify-between items-center">
             <div className="text-sm text-gray-600">
-              Page {currentPage} of {totalPages} • {users.length} users
+              Page {currentPage} of {totalPages} • {totalUsers} total users
             </div>
             <div className="flex space-x-2">
               <button

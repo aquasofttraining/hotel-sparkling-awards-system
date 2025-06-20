@@ -16,11 +16,15 @@ const LoginForm: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const result = await login({ email, password });
-      console.log('Login successful:', result);
-      setTimeout(() => {
+      // ✅ Pass two separate arguments instead of an object
+      const result = await login(email, password);
+      
+      if (result.success) {
+        console.log('Login successful:', result);
         navigate('/dashboard');
-      }, 100);
+      } else {
+        setError(result.message || 'Login failed');
+      }
     } catch (err: any) {
       console.error('Login error:', err);
       if (err.response?.status === 401) {
