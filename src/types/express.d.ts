@@ -5,9 +5,11 @@ declare global {
     interface Request {
       user?: {
         userId: number;
-        roleId: number; // ✅ folosești roleId în JWT și logică
+        roleId: number;
+        role?: string;
         email?: string;
         username?: string;
+        hotelId?: number | null;
       };
     }
   }

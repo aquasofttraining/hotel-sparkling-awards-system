@@ -69,8 +69,12 @@ class ScoringController {
       const { hotelId } = req.params;
       const weights = { ...this.defaultWeights, ...(req.body.weights || {}) };
 
+      // ✅ Find hotel with reviews AND scoring
       const hotel = await Hotel.findByPk(hotelId, {
-        include: [{ model: Review, as: 'reviews' }]
+        include: [
+          { model: Review, as: 'reviews' },
+          { model: HotelScoring, as: 'scoring', required: false }
+        ]
       });
 
       if (!hotel) {
@@ -78,36 +82,42 @@ class ScoringController {
         return;
       }
 
+      // Check permissions for Hotel Manager
       if (user.role === 'Hotel Manager') {
         const { HotelManager } = require('../models');
         const isManager = await HotelManager.findOne({
-          where: { hotelId, userId: user.userId, isActive: true }
+          where: { hotel_id: hotelId, user_id: user.userId, is_active: true }
         });
         
         if (!isManager) {
-          res.status(403).json({ success: false, message: 'Access denied' });
+          res.status(403).json({ success: false, message: 'Access denied: You can only manage your assigned hotels' });
           return;
         }
       }
+
+      console.log(`🔄 Calculating score for hotel: ${hotel.GlobalPropertyName} (ID: ${hotelId})`);
 
       const reviewScores = this.calculateReviewScores(hotel.reviews || []);
       const metadataScores = this.calculateMetadataScores(hotel);
       const totalScore = this.calculateWeightedScore(reviewScores, metadataScores, weights);
 
-      await HotelScoring.upsert({
-        ranking: 1,
+      // ✅ Create/update scoring with proper error handling
+      const [scoring, created] = await HotelScoring.upsert({
+        ranking: hotel.scoring?.ranking || 1, // Keep existing ranking or set to 1
         hotelId: Number(hotelId),
-        hotelName: hotel.GlobalPropertyName || 'Unknown',
+        hotelName: hotel.GlobalPropertyName || 'Unknown Hotel',
         location: hotel.PropertyAddress1 || '',
         sparklingScore: Number(totalScore.toFixed(2)),
         reviewComponent: Number(((reviewScores.amenitiesRate + reviewScores.cleanlinessRate +
           reviewScores.foodBeverage + reviewScores.sleepQuality +
           reviewScores.internetQuality) / 5).toFixed(2)),
         metadataComponent: Number(metadataScores.total.toFixed(2)),
+        sentimentScore: Number(((reviewScores.amenitiesRate + reviewScores.cleanlinessRate) / 2).toFixed(2)),
         totalReviews: hotel.reviews?.length || 0,
-        hotelStars: hotel.HotelStars,
-        distanceToAirport: hotel.DistanceToTheAirport,
-        roomsNumber: hotel.RoomsNumber,
+        hotelStars: hotel.HotelStars || 0,
+        distanceToAirport: hotel.DistanceToTheAirport || undefined,
+        floorsNumber: hotel.FloorsNumber || undefined,
+        roomsNumber: hotel.RoomsNumber || undefined,
         amenitiesRate: Number(reviewScores.amenitiesRate.toFixed(2)),
         cleanlinessRate: Number(reviewScores.cleanlinessRate.toFixed(2)),
         foodBeverage: Number(reviewScores.foodBeverage.toFixed(2)),
@@ -116,15 +126,26 @@ class ScoringController {
         lastUpdated: new Date()
       });
 
+      console.log(`✅ ${created ? 'Created' : 'Updated'} scoring for hotel ${hotelId}`);
+
+      // ✅ Return updated hotel with scoring data
+      const updatedHotel = await Hotel.findByPk(hotelId, {
+        include: [
+          { model: HotelScoring, as: 'scoring', required: false }
+        ]
+      });
+
       res.json({
         success: true,
+        message: 'Score calculated successfully',
         data: {
           hotelId: Number(hotelId),
           totalScore: Number(totalScore.toFixed(2)),
           reviewScores,
           metadataScores,
           weights
-        }
+        },
+        hotel: updatedHotel // ✅ Include updated hotel data
       });
     } catch (error) {
       console.error('Calculate score error:', error);
@@ -143,35 +164,63 @@ class ScoringController {
 
       const weights = { ...this.defaultWeights, ...(req.body.weights || {}) };
       
+      console.log('🔄 Starting recalculation of all hotel scores...');
+
       const hotels = await Hotel.findAll({
-        include: [{ model: Review, as: 'reviews' }]
+        include: [
+          { model: Review, as: 'reviews' },
+          { model: HotelScoring, as: 'scoring', required: false }
+        ]
       });
 
       let processed = 0;
       const scoringData = [];
 
       for (const hotel of hotels) {
-        const reviewScores = this.calculateReviewScores(hotel.reviews || []);
-        const metadataScores = this.calculateMetadataScores(hotel);
-        const totalScore = this.calculateWeightedScore(reviewScores, metadataScores, weights);
+        try {
+          const reviewScores = this.calculateReviewScores(hotel.reviews || []);
+          const metadataScores = this.calculateMetadataScores(hotel);
+          const totalScore = this.calculateWeightedScore(reviewScores, metadataScores, weights);
 
-        scoringData.push({
-          hotelId: hotel.GlobalPropertyID,
-          sparklingScore: Number(totalScore.toFixed(2))
-        });
+          scoringData.push({
+            hotelId: hotel.GlobalPropertyID,
+            sparklingScore: Number(totalScore.toFixed(2)),
+            hotelName: hotel.GlobalPropertyName
+          });
 
-        await HotelScoring.upsert({
-          ranking: processed + 1,
-          hotelId: hotel.GlobalPropertyID,
-          hotelName: hotel.GlobalPropertyName || 'Unknown',
-          sparklingScore: Number(totalScore.toFixed(2)),
-          lastUpdated: new Date()
-        });
+          await HotelScoring.upsert({
+            ranking: processed + 1, // Temporary ranking, will be updated below
+            hotelId: hotel.GlobalPropertyID,
+            hotelName: hotel.GlobalPropertyName || 'Unknown Hotel',
+            location: hotel.PropertyAddress1 || '',
+            sparklingScore: Number(totalScore.toFixed(2)),
+            reviewComponent: Number(((reviewScores.amenitiesRate + reviewScores.cleanlinessRate +
+              reviewScores.foodBeverage + reviewScores.sleepQuality +
+              reviewScores.internetQuality) / 5).toFixed(2)),
+            metadataComponent: Number(metadataScores.total.toFixed(2)),
+            sentimentScore: Number(((reviewScores.amenitiesRate + reviewScores.cleanlinessRate) / 2).toFixed(2)),
+            totalReviews: hotel.reviews?.length || 0,
+            hotelStars: hotel.HotelStars || 0,
+            distanceToAirport: hotel.DistanceToTheAirport || undefined,
+            floorsNumber: hotel.FloorsNumber || undefined,
+            roomsNumber: hotel.RoomsNumber || undefined,
+            amenitiesRate: Number(reviewScores.amenitiesRate.toFixed(2)),
+            cleanlinessRate: Number(reviewScores.cleanlinessRate.toFixed(2)),
+            foodBeverage: Number(reviewScores.foodBeverage.toFixed(2)),
+            sleepQuality: Number(reviewScores.sleepQuality.toFixed(2)),
+            internetQuality: Number(reviewScores.internetQuality.toFixed(2)),
+            lastUpdated: new Date()
+          });
 
-        processed++;
+          processed++;
+        } catch (error) {
+          console.error(`Error processing hotel ${hotel.GlobalPropertyID}:`, error);
+        }
       }
 
+      // ✅ Update rankings based on sparklingScore
       scoringData.sort((a, b) => b.sparklingScore - a.sparklingScore);
+      
       for (let i = 0; i < scoringData.length; i++) {
         await HotelScoring.update(
           { ranking: i + 1 },
@@ -179,9 +228,19 @@ class ScoringController {
         );
       }
 
+      console.log(`✅ Recalculated scores for ${processed} hotels`);
+
       res.json({
         success: true,
-        message: `Recalculated scores for ${processed} hotels`
+        message: `Successfully recalculated scores for ${processed} hotels`,
+        data: {
+          processedCount: processed,
+          totalHotels: hotels.length,
+          topHotels: scoringData.slice(0, 5).map(item => ({
+            hotelName: item.hotelName,
+            sparklingScore: item.sparklingScore
+          }))
+        }
       });
     } catch (error) {
       console.error('Recalculate scores error:', error);
@@ -192,20 +251,20 @@ class ScoringController {
   private calculateReviewScores(reviews: any[]): any {
     if (reviews.length === 0) {
       return {
-        amenitiesRate: 3.0,
-        cleanlinessRate: 3.0,
-        foodBeverage: 3.0,
-        sleepQuality: 3.0,
-        internetQuality: 3.0
+        amenitiesRate: 7.5, // Better default values
+        cleanlinessRate: 8.0,
+        foodBeverage: 7.0,
+        sleepQuality: 7.5,
+        internetQuality: 6.5
       };
     }
 
     const totals = reviews.reduce((acc, review) => ({
-      amenitiesRate: acc.amenitiesRate + (review.overallRating || 3.0),
-      cleanlinessRate: acc.cleanlinessRate + (review.overallRating || 3.0),
-      foodBeverage: acc.foodBeverage + (review.overallRating || 3.0),
-      sleepQuality: acc.sleepQuality + (review.overallRating || 3.0),
-      internetQuality: acc.internetQuality + (review.overallRating || 3.0)
+      amenitiesRate: acc.amenitiesRate + (review.overallRating || 7.0),
+      cleanlinessRate: acc.cleanlinessRate + (review.overallRating || 7.0),
+      foodBeverage: acc.foodBeverage + (review.overallRating || 7.0),
+      sleepQuality: acc.sleepQuality + (review.overallRating || 7.0),
+      internetQuality: acc.internetQuality + (review.overallRating || 7.0)
     }), {
       amenitiesRate: 0,
       cleanlinessRate: 0,
@@ -226,7 +285,7 @@ class ScoringController {
 
   private calculateMetadataScores(hotel: any): any {
     const distanceScore = this.normalizeDistance(hotel.DistanceToTheAirport || 10);
-    const starScore = hotel.HotelStars || 3;
+    const starScore = (hotel.HotelStars || 3) * 2; // Scale to 10
     const roomScore = this.normalizeRooms(hotel.RoomsNumber || 50);
 
     return {
@@ -238,16 +297,16 @@ class ScoringController {
   }
 
   private normalizeDistance(distance: number): number {
-    if (distance <= 5) return 5;
-    if (distance >= 25) return 1;
-    return 5 - ((distance - 5) / 20) * 4;
+    if (distance <= 5) return 10;
+    if (distance >= 25) return 2;
+    return 10 - ((distance - 5) / 20) * 8;
   }
 
   private normalizeRooms(rooms: number): number {
-    if (rooms <= 20) return 2;
-    if (rooms <= 50) return 3;
-    if (rooms <= 100) return 4;
-    return 5;
+    if (rooms <= 20) return 4;
+    if (rooms <= 50) return 6;
+    if (rooms <= 100) return 8;
+    return 10;
   }
 
   private calculateWeightedScore(reviewScores: any, metadataScores: any, weights: ScoringWeights): number {

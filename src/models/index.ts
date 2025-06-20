@@ -1,4 +1,3 @@
-// src/models/index.ts
 import sequelize from '../config/database';
 
 import User from './User';
@@ -43,21 +42,39 @@ HotelManager.belongsTo(User, { foreignKey: 'user_id', as: 'manager' });
 User.hasMany(HotelManager, { foreignKey: 'assigned_by', as: 'assignedManagers' });
 HotelManager.belongsTo(User, { foreignKey: 'assigned_by', as: 'assigner' });
 
-// Hotel <-> Review (1:N)
-Hotel.hasMany(Review, { foreignKey: 'hotel_id', as: 'reviews' });
-Review.belongsTo(Hotel, { foreignKey: 'hotel_id', as: 'hotel' });
+//  Hotel <-> Review (1:N) - Use correct primary/foreign key mapping
+Hotel.hasMany(Review, { 
+  foreignKey: 'hotel_id', 
+  sourceKey: 'GlobalPropertyID', // Hotel's primary key
+  as: 'reviews' 
+});
+Review.belongsTo(Hotel, { 
+  foreignKey: 'hotel_id', 
+  targetKey: 'GlobalPropertyID', // Hotel's primary key
+  as: 'hotel' 
+});
 
 // Hotel <-> HotelManager (1:N)
-Hotel.hasMany(HotelManager, { foreignKey: 'hotel_id', as: 'managers' });
-HotelManager.belongsTo(Hotel, { foreignKey: 'hotel_id', as: 'hotel' });
+Hotel.hasMany(HotelManager, { 
+  foreignKey: 'hotel_id', 
+  sourceKey: 'GlobalPropertyID', // Hotel's primary key
+  as: 'managers' 
+});
+HotelManager.belongsTo(Hotel, { 
+  foreignKey: 'hotel_id', 
+  targetKey: 'GlobalPropertyID', // Hotel's primary key
+  as: 'hotel' 
+});
 
-// Hotel <-> HotelScoring (1:1)
+//  Hotel <-> HotelScoring (1:1) - This is the key fix for your scoring issue
 Hotel.hasOne(HotelScoring, {
-  foreignKey: 'hotel_id',
+  foreignKey: 'hotelId', // Property name in HotelScoring model
+  sourceKey: 'GlobalPropertyID', // Primary key in Hotel model
   as: 'scoring'
 });
 HotelScoring.belongsTo(Hotel, {
-  foreignKey: 'hotel_id',
+  foreignKey: 'hotelId', // Property name in HotelScoring model  
+  targetKey: 'GlobalPropertyID', // Primary key in Hotel model
   as: 'hotel'
 });
 

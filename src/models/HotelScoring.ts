@@ -146,6 +146,7 @@ HotelScoring.init({
   modelName: 'HotelScoring',
   tableName: 'hotel_scoring_table',
   timestamps: false,
+  underscored: false,
 });
 
 export default HotelScoring;

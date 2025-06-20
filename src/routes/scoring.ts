@@ -8,13 +8,13 @@ router.get('/', authenticateToken, (req: Request, res: Response) => ScoringContr
 
 router.post('/calculate/:hotelId',
   authenticateToken,
-  requireRole(['Administrator', 'Data Operator', 'Hotel Manager']),
+  requireRole(['Administrator', 'administrator', 'Data Operator', 'data_operator', 'Hotel Manager','hotel_manager']),
   (req: Request, res: Response) => ScoringController.calculateHotelScore(req, res)
 );
 
 router.post('/recalculate-all',
   authenticateToken,
-  requireRole(['Administrator', 'Data Operator']),
+  requireRole(['Administrator','administrator', 'Data Operator','data_operator']),
   (req: Request, res: Response) => ScoringController.recalculateAllScores(req, res)
 );
 

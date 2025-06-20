@@ -8,7 +8,9 @@
     "build": "tsc",
     "start": "node dist/app.js",
     "start:dev": "nodemon src/app.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "update-passwords": "ts-node scripts/update-user-passwords.ts",
+    "db:update-passwords": "ts-node scripts/update-user-passwords.ts"
   },
   "dependencies": {
     "@types/react": "^19.1.8",

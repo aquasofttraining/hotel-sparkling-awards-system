@@ -1,4 +1,3 @@
-// services/authService.ts
 import { User } from '../types/auth';
 import { jwtDecode } from 'jwt-decode';
 
