@@ -18,4 +18,4 @@ router.post('/recalculate-all',
   (req: Request, res: Response) => ScoringController.recalculateAllScores(req, res)
 );
 
-module.exports = router;
+export default router;

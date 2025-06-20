@@ -45,4 +45,4 @@ router.put('/:id/metadata',
   (req: AuthRequest, res: Response) => HotelController.updateHotelMetadata(req, res)
 );
 
-module.exports = router;
+export default router;

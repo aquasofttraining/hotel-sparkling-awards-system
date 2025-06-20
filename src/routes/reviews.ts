@@ -1,24 +1,33 @@
-import { Router, Request, Response } from 'express';
+import { Router } from 'express';
 import ReviewController from '../controllers/ReviewController';
-import { authenticateToken } from '../middleware/auth';
+import { authenticateToken, requireRole } from '../middleware/auth';
+
 
 const router = Router();
 
-interface AuthRequest extends Request {
-  user?: {
-    userId: number;
-    roleId: number;
-    role?: string;
-    email?: string;
-    username?: string;
-  };
-}
+/**
+ * @route   GET /api/reviews
+ * @desc    Get all reviews
+ * @access  Public
+ */
+router.get('/', ReviewController.getAllReviews);
 
-router.get('/', (req: Request, res: Response) => ReviewController.getAllReviews(req, res));
-router.get('/hotel/:hotelId', authenticateToken, (req: AuthRequest, res: Response) => ReviewController.getReviewsByHotel(req, res));
-router.post('/', (req: Request, res: Response) => ReviewController.createReview(req, res));
-router.put('/:id', (req: Request, res: Response) => ReviewController.updateReview(req, res));
-router.delete('/:id', (req: Request, res: Response) => ReviewController.deleteReview(req, res));
+router.get('/:hotelId',  ReviewController.getReviewsByHotel);
 
-module.exports = router;
+/**
+ * @route   POST /api/reviews
+ * @desc    Create a new review
+ * @access  Public
+ */
+router.post('/', ReviewController.createReview);
 
+router.put('/:id', authenticateToken, ReviewController.updateReview);
+
+/**
+ * @route   DELETE /api/reviews/:id
+ * @desc    Delete a review by ID
+ * @access  Public
+ */
+router.delete('/:id', ReviewController.deleteReview);
+
+export default router;

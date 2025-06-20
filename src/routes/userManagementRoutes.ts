@@ -38,4 +38,4 @@ router.get('/hotels', (req: Request, res: Response) =>
   UserManagementController.getHotels(req, res)
 );
 
-module.exports = router;
+export default router;
